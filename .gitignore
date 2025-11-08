@@ -1,0 +1,68 @@
+# Logs
+ai-tools-client/logs
+ai-tools-client/*.log
+ai-tools-client/npm-debug.log*
+ai-tools-client/yarn-debug.log*
+ai-tools-client/yarn-error.log*
+ai-tools-client/pnpm-debug.log*
+ai-tools-client/lerna-debug.log*
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+ai-tools-client/node_modules
+ai-tools-client/.DS_Store
+ai-tools-client/dist
+ai-tools-client/dist-ssr
+ai-tools-client/coverage
+ai-tools-client/*.local
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+# Editor directories and files
+ai-tools-client/.vscode/*
+!ai-tools-client/.vscode/extensions.json
+ai-tools-client/.idea
+ai-tools-client/*.suo
+ai-tools-client/*.ntvs*
+ai-tools-client/*.njsproj
+ai-tools-client/*.sln
+ai-tools-client/*.sw?
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+ai-tools-client/*.tsbuildinfo
+*.tsbuildinfo
+
+ai-tools-client/.eslintcache
+.eslintcache
+
+# Cypress
+ai-tools-client/cypress/videos/
+ai-tools-client/cypress/screenshots/
+/cypress/videos/
+/cypress/screenshots/
+
+# Vitest
+ai-tools-client/__screenshots__/
+__screenshots__/
+
+# Claude
+.claude
+
+# task
+.shrimp

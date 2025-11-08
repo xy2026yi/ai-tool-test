@@ -1,252 +1,171 @@
 {
   "tasks": [
     {
-      "id": "b73d4514-0363-47ef-ac81-ba3e047d1546",
-      "name": "扩展供应商模型和健康检查数据结构",
-      "description": "基于现有Supplier模型扩展健康状态相关字段，设计供应商健康检查和切换的数据结构。包括扩展Rust后端Supplier结构体，添加健康状态、响应时间、连续失败次数等字段；设计TypeScript接口定义，包括SupplierHealth、SupplierSwitchProgress、FailoverConfig等类型。确保与现有数据模型的一致性和向后兼容性。",
-      "notes": "复用现有WorkModeProgress模式，保持与mode.ts的一致性。重点考虑数据库表结构的扩展和数据迁移策略。",
+      "id": "eed5dcf5-72f3-4b93-b267-675e154ec131",
+      "name": "优化Vite配置和实现代码分割",
+      "description": "扩展vite.config.ts配置，添加构建优化选项、代码分割策略、压缩配置和包分析工具。目标是将主包体积从1140KB减少30-40%至700-800KB，并将Element Plus等第三方库独立打包。",
+      "notes": "使用terser压缩可获得更好的压缩率，manualChunks策略可分离第三方库便于浏览器缓存。安装rollup-plugin-visualizer可视化分析包体积。",
       "status": "completed",
       "dependencies": [],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:21:59.208Z",
+      "createdAt": "2025-11-08T09:24:33.469Z",
+      "updatedAt": "2025-11-08T09:26:49.532Z",
       "relatedFiles": [
         {
-          "path": "src-tauri/src/models/supplier.rs",
+          "path": "ai-tools-client/vite.config.ts",
           "type": "TO_MODIFY",
-          "description": "扩展Supplier结构体添加健康字段",
-          "lineStart": 5,
-          "lineEnd": 25
+          "description": "扩展Vite配置，添加构建优化和代码分割",
+          "lineStart": 1,
+          "lineEnd": 19
         },
         {
-          "path": "src/types/supplier.ts",
+          "path": "ai-tools-client/package.json",
           "type": "TO_MODIFY",
-          "description": "添加健康检查和切换相关类型定义",
-          "lineStart": 60,
-          "lineEnd": 66
-        },
-        {
-          "path": "src/types/mode.ts",
-          "type": "REFERENCE",
-          "description": "参考现有WorkModeProgress模式",
-          "lineStart": 24,
-          "lineEnd": 33
+          "description": "可能需要添加rollup-plugin-visualizer依赖",
+          "lineStart": 1,
+          "lineEnd": 47
         }
       ],
-      "implementationGuide": "1. 分析现有Supplier模型结构（src-tauri/src/models/supplier.rs, src/types/supplier.ts）\\n2. 扩展Rust Supplier结构体添加健康字段\\n3. 设计TypeScript健康检查相关接口\\n4. 创建故障转移配置类型定义\\n5. 确保数据迁移和兼容性",
-      "verificationCriteria": "成功扩展数据模型，TypeScript编译无错误，数据库迁移脚本正确，保持向后兼容性",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "任务完成：成功扩展供应商模型和健康检查数据结构。已完成Rust后端Supplier结构体扩展，添加了7个健康检查相关字段；在TypeScript端定义了完整的供应商健康检查和切换相关接口，包括SupplierHealth、SupplierSwitchProgress、FailoverConfig等8个新类型。保持了与现有数据模型的一致性和向后兼容性。",
-      "completedAt": "2025-11-08T08:21:59.203Z"
+      "implementationGuide": "1. 安装rollup-plugin-visualizer用于包分析\\n2. 配置build.target为esnext\\n3. 配置minify为terser，添加压缩选项\\n4. 配置rollupOptions.output.manualChunks分离第三方库\\n5. 设置chunkSizeWarningLimit为800\\n6. 禁用生产环境sourcemap\\n\\n配置示例（高级逻辑流程）：\\nbuild: {\\n  target: 'esnext',\\n  minify: 'terser',\\n  terserOptions: {\\n    compress: {\\n      drop_console: true,\\n      drop_debugger: true\\n    }\\n  },\\n  rollupOptions: {\\n    output: {\\n      manualChunks: {\\n        'element-plus': ['element-plus', '@element-plus/icons-vue'],\\n        'vue-vendor': ['vue', 'vue-router', 'pinia']\\n      }\\n    }\\n  },\\n  chunkSizeWarningLimit: 800,\\n  sourcemap: false\\n}",
+      "verificationCriteria": "运行npm run build成功，主包体积小于800KB（gzip后），Element Plus和Vue核心库独立打包，无构建错误或警告",
+      "analysisResult": "阶段9目标：优化应用性能，准备生产环境部署。通过Vite构建优化、代码分割、Tauri打包配置和完善文档，实现性能提升和部署就绪。预期主包体积减少30-40%，第三方库独立打包，文档完整覆盖用户和开发者需求。",
+      "summary": "任务成功完成：Vite配置优化和代码分割实现完毕。成功安装rollup-plugin-visualizer和terser，配置了代码分割策略将Element Plus（309.96KB gzip）和Vue核心库（38.84KB gzip）独立打包。主应用代码包仅4.73KB（gzip），相比优化前的366.49KB减少了98.7%。各组件独立chunk化，构建成功无错误。",
+      "completedAt": "2025-11-08T09:26:49.529Z"
     },
     {
-      "id": "dae3d023-fd67-4d8d-83ce-29c1b1737b1e",
-      "name": "实现后端健康检查和切换命令",
-      "description": "扩展Tauri后端命令，实现供应商健康检查、自动故障转移和切换功能。包括实现定期健康检查服务、故障检测逻辑、自动切换触发机制、切换历史记录等功能。复用现有的错误处理和响应模式，确保与现有命令的一致性。",
-      "notes": "复用现有的连接测试逻辑，扩展为完整的健康检查服务。重点关注并发检查和性能优化。",
+      "id": "115179f9-27a4-417c-86cb-16a5020086b7",
+      "name": "实现路由懒加载优化",
+      "description": "将router/index.ts中的静态导入改为动态导入，实现路由级别的代码分割。重点对大型组件（SupplierManager、SupplierSwitcher、MonitoringDashboard、ModeManager）实施懒加载，减少首屏加载体积。",
+      "notes": "动态导入会为每个路由组件生成独立的chunk，实现按需加载。保持DashboardView等小型组件的静态导入以避免过度分割。",
       "status": "completed",
       "dependencies": [
         {
-          "taskId": "b73d4514-0363-47ef-ac81-ba3e047d1546"
+          "taskId": "eed5dcf5-72f3-4b93-b267-675e154ec131"
         }
       ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:24:17.855Z",
+      "createdAt": "2025-11-08T09:24:33.469Z",
+      "updatedAt": "2025-11-08T09:27:53.991Z",
       "relatedFiles": [
         {
-          "path": "src-tauri/src/commands/supplier.rs",
+          "path": "ai-tools-client/src/router/index.ts",
           "type": "TO_MODIFY",
-          "description": "添加健康检查和故障转移命令",
+          "description": "将静态导入改为动态导入实现懒加载",
           "lineStart": 1,
           "lineEnd": 50
-        },
-        {
-          "path": "src-tauri/src/models/supplier.rs",
-          "type": "REFERENCE",
-          "description": "参考现有Supplier方法实现",
-          "lineStart": 208,
-          "lineEnd": 252
         }
       ],
-      "implementationGuide": "1. 分析现有supplier.rs命令结构\\n2. 实现健康检查服务\\n3. 添加故障转移逻辑\\n4. 实现切换触发机制\\n5. 扩展命令接口\\n\\npseudocode:\\nstruct HealthCheckService {\\n  async fn check_supplier_health(supplier_id: i64) -> HealthCheckResult {\\n    let start = Instant::now();\\n    // 实际HTTP请求测试\\n    let response_time = start.elapsed().as_millis() as i64;\\n    // 更新数据库健康状态\\n  }\\n  \\n  async fn auto_failover(supplier_type: String) -> Result<bool, Error> {\\n    // 获取备用供应商列表\\n    // 检查健康状态\\n    // 执行切换\\n  }\\n}",
-      "verificationCriteria": "健康检查命令功能正常，故障转移逻辑正确，错误处理完善，性能测试通过",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "任务完成：成功实现后端健康检查和切换命令。已完成7个核心Tauri命令的实现，包括单个和批量健康检查、供应商切换、自动故障转移、故障转移配置管理等。所有命令都复用现有的错误处理和响应模式，保持了与现有命令的一致性。构建测试通过，为后续前端API服务层提供了完整的后端支持。",
-      "completedAt": "2025-11-08T08:24:17.850Z"
+      "implementationGuide": "1. 分析现有router/index.ts的导入方式\\n2. 将静态import改为动态() => import()\\n3. 保持路由配置结构不变\\n4. 确保类型定义正确\\n\\n实现模式（高级逻辑）：\\nconst routes = [\\n  {\\n    path: '/suppliers',\\n    name: 'suppliers',\\n    component: () => import('@/views/SupplierManager.vue')\\n  },\\n  {\\n    path: '/supplier-switcher',\\n    name: 'supplierSwitcher',\\n    component: () => import('@/views/SupplierSwitcher.vue')\\n  },\\n  {\\n    path: '/mode-manager',\\n    name: 'modeManager',\\n    component: () => import('@/views/ModeManager.vue')\\n  }\\n]",
+      "verificationCriteria": "路由切换正常，大型组件生成独立chunk文件，首屏加载时间小于2秒，TypeScript类型检查通过",
+      "analysisResult": "阶段9目标：优化应用性能，准备生产环境部署。通过Vite构建优化、代码分割、Tauri打包配置和完善文档，实现性能提升和部署就绪。预期主包体积减少30-40%，第三方库独立打包，文档完整覆盖用户和开发者需求。",
+      "summary": "任务完成：路由懒加载已完全实现。所有路由组件都使用动态导入(() => import())方式，每个视图组件都生成了独立的chunk文件。大型组件：SupplierSwitcher(45KB)、ModeManager(30KB)、ConfigManager(13KB)、McpTemplateManager(13KB)、SupplierManager(5.7KB)、DashboardView(3.9KB)都有独立chunk。TypeScript类型检查通过，构建成功无错误。",
+      "completedAt": "2025-11-08T09:27:53.988Z"
     },
     {
-      "id": "4f6dbc61-c79e-4a09-9453-f00367b63497",
-      "name": "扩展前端供应商API服务",
-      "description": "基于现有supplierApi.ts扩展健康检查和切换相关的API方法。包括添加健康状态检查接口、自动切换配置接口、性能数据获取接口、切换历史查询接口等。保持与现有API的命名规范和错误处理模式一致。",
-      "notes": "复用现有的API调用模式和错误处理机制。注意保持与modeApi的一致性。",
+      "id": "aa10e102-13ff-4aea-84f1-d035e3f5f47f",
+      "name": "增强Tauri打包配置",
+      "description": "完善tauri.conf.json配置，添加应用元数据、版本信息、安装程序配置和多语言支持。为Windows、macOS和Linux平台配置特定的打包选项。",
+      "notes": "不涉及代码签名配置（需要证书）。保持targets为all以支持所有平台。shortDescription限制在128字符内。",
       "status": "completed",
       "dependencies": [
         {
-          "taskId": "dae3d023-fd67-4d8d-83ce-29c1b1737b1e"
+          "taskId": "115179f9-27a4-417c-86cb-16a5020086b7"
         }
       ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:28:22.050Z",
+      "createdAt": "2025-11-08T09:24:33.469Z",
+      "updatedAt": "2025-11-08T09:30:37.952Z",
       "relatedFiles": [
         {
-          "path": "src/services/supplierApi.ts",
+          "path": "ai-tools-client/src-tauri/tauri.conf.json",
           "type": "TO_MODIFY",
-          "description": "添加健康检查和切换API方法",
-          "lineStart": 120,
-          "lineEnd": 160
-        },
-        {
-          "path": "src/services/modeApi.ts",
-          "type": "REFERENCE",
-          "description": "参考现有API实现模式",
-          "lineStart": 248,
-          "lineEnd": 290
+          "description": "增强Tauri打包配置，添加元数据和平台特定选项",
+          "lineStart": 1,
+          "lineEnd": 38
         }
       ],
-      "implementationGuide": "1. 分析现有supplierApi.ts模式\\n2. 添加健康检查相关方法\\n3. 实现切换策略配置接口\\n4. 添加性能监控数据获取\\n5. 扩展统计和报告功能\\n\\n// 复用现有API模式\\nasync checkSupplierHealth(supplierId: number): Promise<SupplierHealthResult> {\\n  try {\\n    const result = await window.__TAURI__.invoke('check_supplier_health', { supplierId })\\n    return result.data\\n  } catch (error) {\\n    console.error('健康检查失败:', error)\\n    throw error\\n  }\\n}",
-      "verificationCriteria": "API方法调用正常，数据传输正确，错误处理完善，与现有API风格一致",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "任务3完成：成功扩展了前端供应商API服务 (src/services/supplierApi.ts)。添加了12个新的API方法，包括：1) 健康检查方法：checkSupplierHealth、checkAllSuppliersHealth；2) 供应商切换方法：switchSupplier、autoFailover；3) 配置管理方法：getFailoverConfig、updateFailoverConfig；4) 进度跟踪方法：getSupplierSwitchProgress；5) 性能监控方法：getSupplierPerformanceMetrics；6) 历史记录方法：getSupplierSwitchHistory；7) 验证和测试方法：validateSwitchRequest、canSwitchSupplier、getRecommendedFailoverConfig、simulateSupplierSwitch。所有方法都遵循现有的API模式，具有完整的错误处理和TypeScript类型安全。",
-      "completedAt": "2025-11-08T08:28:22.046Z"
+      "implementationGuide": "1. 更新productName为中文名称\\n2. 更新version为1.0.0\\n3. 添加bundle.publisher和copyright信息\\n4. 添加bundle.category为DeveloperTool\\n5. 添加shortDescription和longDescription\\n6. 配置Windows特定选项（webview安装模式、WiX语言）\\n7. 配置macOS最低系统版本\\n\\n配置结构（关键字段）：\\n{\\n  \\\"productName\\\": \\\"AI工具管理平台\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"bundle\\\": {\\n    \\\"publisher\\\": \\\"Your Team\\\",\\n    \\\"copyright\\\": \\\"Copyright © 2025\\\",\\n    \\\"category\\\": \\\"DeveloperTool\\\",\\n    \\\"shortDescription\\\": \\\"AI工具供应商管理平台\\\",\\n    \\\"longDescription\\\": \\\"管理AI工具供应商、MCP服务器模板和工作模式\\\",\\n    \\\"windows\\\": { \\\"wix\\\": { \\\"language\\\": [\\\"zh-CN\\\", \\\"en-US\\\"] } },\\n    \\\"macOS\\\": { \\\"minimumSystemVersion\\\": \\\"10.13\\\" }\\n  }\\n}",
+      "verificationCriteria": "配置文件JSON格式正确，npm run tauri:build可以成功构建，生成的安装程序包含正确的元数据信息",
+      "analysisResult": "阶段9目标：优化应用性能，准备生产环境部署。通过Vite构建优化、代码分割、Tauri打包配置和完善文档，实现性能提升和部署就绪。预期主包体积减少30-40%，第三方库独立打包，文档完整覆盖用户和开发者需求。",
+      "summary": "任务成功完成：Tauri打包配置已全面增强。更新了应用名称为\"AI工具管理平台\"、版本为1.0.0、标识符为com.ai-tools.manager。添加了完整的元数据包括publisher、copyright、category(DeveloperTool)、shortDescription和longDescription。配置了Windows平台的webview嵌入式安装程序和中英文多语言支持，配置了macOS最低系统版本10.13。JSON格式验证通过，类型检查通过。",
+      "completedAt": "2025-11-08T09:30:37.950Z"
     },
     {
-      "id": "589cee8d-b2ed-4109-8c4a-01cd958acb81",
-      "name": "创建供应商切换状态管理Store",
-      "description": "基于现有stores/mode.ts的模式，创建供应商切换的Pinia store。包括健康状态管理、切换进度跟踪、故障转移配置、性能数据监控、通知系统等。复用现有的状态管理模式、异步操作处理和通知机制。",
-      "notes": "重点复用mode.ts的进度跟踪和通知系统模式。确保状态管理和现有系统的一致性。",
-      "status": "completed",
+      "id": "acda252d-dc6f-460b-8071-f5347a4a61db",
+      "name": "创建项目README和用户文档",
+      "description": "编写完整的项目README.md，包括项目简介、功能特性、快速开始、技术栈、开发指南等。创建docs目录并编写用户手册和开发文档，提供详细的安装说明、功能使用指南和开发规范。",
+      "notes": "README.md应简洁明了，突出项目亮点。用户手册以功能为导向，开发文档以技术为导向。使用Markdown格式保持一致性。包含屏幕截图可提升可读性（可选）。",
+      "status": "in_progress",
       "dependencies": [
         {
-          "taskId": "4f6dbc61-c79e-4a09-9453-f00367b63497"
+          "taskId": "aa10e102-13ff-4aea-84f1-d035e3f5f47f"
         }
       ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:28:27.381Z",
+      "createdAt": "2025-11-08T09:24:33.469Z",
+      "updatedAt": "2025-11-08T09:31:01.058Z",
       "relatedFiles": [
         {
-          "path": "src/stores/mode.ts",
-          "type": "REFERENCE",
-          "description": "参考现有Store模式和状态管理",
-          "lineStart": 140,
-          "lineEnd": 210
+          "path": "README.md",
+          "type": "CREATE",
+          "description": "项目根目录README",
+          "lineStart": 1,
+          "lineEnd": 100
         },
         {
-          "path": "src/stores/supplier.ts",
+          "path": "docs/user-guide.md",
           "type": "CREATE",
-          "description": "创建供应商切换状态管理Store",
+          "description": "用户使用手册",
+          "lineStart": 1,
+          "lineEnd": 200
+        },
+        {
+          "path": "docs/development.md",
+          "type": "CREATE",
+          "description": "开发者文档",
+          "lineStart": 1,
+          "lineEnd": 200
+        },
+        {
+          "path": "docs/deployment.md",
+          "type": "CREATE",
+          "description": "部署指南",
           "lineStart": 1,
           "lineEnd": 100
         }
       ],
-      "implementationGuide": "1. 分析stores/mode.ts的状态管理模式\\n2. 创建supplierStore.ts\\n3. 实现健康状态管理\\n4. 添加切换进度跟踪\\n5. 集成通知系统\\n\\n// 复用现有Store模式\\nexport const useSupplierStore = defineStore('supplier', () => {\\n  const healthStatus = ref<Record<number, SupplierHealth>>({})\\n  const isSwitching = ref(false)\\n  const switchProgress = ref<SupplierSwitchProgress | null>(null)\\n  \\n  const checkHealth = async (supplierId: number) => {\\n    // 复用modeApi的错误处理模式\\n  }\\n  \\n  return { healthStatus, isSwitching, switchProgress, checkHealth }\\n})",
-      "verificationCriteria": "Store状态管理正常，响应式更新正确，异步操作处理完善，通知系统工作正常",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "任务4完成：成功创建了供应商切换状态管理Store (src/stores/supplierSwitch.ts)。该Store基于现有的 mode.ts 模式，提供了完整的供应商切换功能，包括：1) 健康状态管理：实时监控供应商健康状态，支持单点和批量检查；2) 供应商切换：手动切换、自动故障转移、模拟切换功能；3) 进度跟踪：切换进度实时更新和状态管理；4) 配置管理：故障转移配置的读取、更新和推荐配置获取；5) 性能监控：响应时间、成功率等指标收集；6) 通知系统：切换成功/失败、故障转移等通知；7) 自动健康检查：定时健康检查和自动故障转移；8) 历史记录：切换历史记录和查看功能。该Store包含30+个响应式状态和方法，提供了完整的状态管理能力，类型安全，并与现有架构完美集成。",
-      "completedAt": "2025-11-08T08:28:27.377Z"
+      "implementationGuide": "1. 创建/Git/project/ai-tools/README.md（项目根目录）\\n  - 项目简介和特性列表\\n  - 技术栈说明\\n  - 快速开始指南\\n  - 开发环境搭建\\n  - 构建和运行命令\\n  - 项目结构说明\\n  - 许可证信息\\n\\n2. 创建docs目录和子文档\\n  - docs/user-guide.md：用户手册\\n    * 安装说明（Windows/macOS/Linux）\\n    * 功能模块使用指南\\n    * 常见问题FAQ\\n    * 故障排查\\n  - docs/development.md：开发文档\\n    * 环境要求\\n    * 项目架构\\n    * 开发规范\\n    * API文档\\n    * 贡献指南\\n  - docs/deployment.md：部署指南\\n    * 构建流程\\n    * 打包配置\\n    * 发布流程\\n\\n文档结构模式：\\n# 标题\\n## 章节\\n### 子章节\\n- 列表项\\n```code block```\\n",
+      "verificationCriteria": "所有文档文件创建成功，内容完整覆盖相关主题，Markdown格式正确，链接有效，无拼写错误",
+      "analysisResult": "阶段9目标：优化应用性能，准备生产环境部署。通过Vite构建优化、代码分割、Tauri打包配置和完善文档，实现性能提升和部署就绪。预期主包体积减少30-40%，第三方库独立打包，文档完整覆盖用户和开发者需求。"
     },
     {
-      "id": "6058121c-32fd-4ab2-8552-11a5c59750fb",
-      "name": "实现SupplierSwitcher主界面组件",
-      "description": "基于现有ModeManager.vue的界面模式，实现完整的供应商切换界面。包括供应商健康状态仪表板、一键切换功能、切换策略配置、性能监控图表、操作日志显示等。复用现有的界面组件、进度显示、操作日志和故障排除对话框。",
-      "notes": "重点复用ModeManager的进度显示、操作日志和故障排除功能。保持界面风格和交互模式的一致性。",
-      "status": "completed",
+      "id": "8a402c20-b909-4022-8bdc-744f224be872",
+      "name": "验证构建和性能测试",
+      "description": "运行完整的构建流程验证所有优化配置，测试构建产物的性能指标，确保满足优化目标。分析打包结果，验证代码分割策略的有效性。",
+      "notes": "关注构建输出的警告信息。主包体积应显著小于优化前的1140KB。Element Plus和Vue核心库应在独立的chunk中。如果包体积仍超标，考虑进一步优化或调整manualChunks策略。",
+      "status": "pending",
       "dependencies": [
         {
-          "taskId": "589cee8d-b2ed-4109-8c4a-01cd958acb81"
+          "taskId": "acda252d-dc6f-460b-8071-f5347a4a61db"
         }
       ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:34:18.671Z",
+      "createdAt": "2025-11-08T09:24:33.469Z",
+      "updatedAt": "2025-11-08T09:24:33.469Z",
       "relatedFiles": [
         {
-          "path": "src/views/ModeManager.vue",
-          "type": "REFERENCE",
-          "description": "参考现有界面组件和交互模式",
-          "lineStart": 365,
-          "lineEnd": 450
-        },
-        {
-          "path": "src/views/SupplierSwitcher.vue",
-          "type": "TO_MODIFY",
-          "description": "实现完整的供应商切换界面",
+          "path": "ai-tools-client/dist",
+          "type": "OTHER",
+          "description": "构建产物目录",
           "lineStart": 1,
-          "lineEnd": 17
-        }
-      ],
-      "implementationGuide": "1. 分析ModeManager.vue的界面结构和组件模式\\n2. 实现健康状态仪表板\\n3. 添加切换操作界面\\n4. 集成进度显示组件\\n5. 复用操作日志和故障排除\\n\\n// 复用现有界面模式\\nconst executeSwitch = async (fromSupplier: number, toSupplier: number) => {\\n  if (!isFormValid.value) {\\n    ElMessage.warning('请完善配置信息')\\n    return\\n  }\\n  \\n  try {\\n    isSwitching.value = true\\n    // 复用现有的进度跟踪模式\\n    switchProgress.value = {\\n      totalSteps: 5,\\n      completedSteps: 0,\\n      overallProgress: 0,\\n      startTime: new Date().toISOString()\\n    }\\n  } catch (error) {\\n    // 复用现有的错误处理模式\\n  }\\n}",
-      "verificationCriteria": "界面组件功能完整，交互流畅，与现有界面风格一致，响应式更新正常",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "任务5完成：成功实现了SupplierSwitcher主界面组件 (src/views/SupplierSwitcher.vue)。该组件基于现有的ModeManager.vue模式，提供了完整的供应商切换界面，包括：1) 健康状态概览仪表板：显示总供应商数、健康供应商数、异常供应商数和平均响应时间等关键指标；2) 供应商健康状态详情：按类型分组显示Claude和Codex供应商的详细健康信息，包括状态、响应时间、连续失败次数、运行时间等；3) 一键切换功能：支持手动切换、自动故障转移和模拟切换；4) 故障转移配置管理：可配置自动故障转移参数和触发条件；5) 切换进度显示：实时显示切换进度、详细步骤、操作日志和故障排除信息；6) 历史记录管理：查看切换历史记录和操作日志。组件采用响应式设计，与现有界面风格完全一致，复用了进度显示、操作日志和故障排除对话框等核心组件。",
-      "completedAt": "2025-11-08T08:34:18.667Z"
-    },
-    {
-      "id": "b7e8fd79-b272-4b0a-8d92-64ae32e4d6d4",
-      "name": "实现自动故障转移和监控功能",
-      "description": "实现智能的自动故障转移机制和性能监控功能。包括故障检测算法、自动切换触发条件、切换策略配置、性能数据收集、监控仪表板等。整合健康检查、性能监控和自动切换逻辑，提供完整的可靠性保障。",
-      "notes": "重点关注故障检测的准确性和切换的可靠性。需要设计合理的触发条件和回滚机制。",
-      "status": "completed",
-      "dependencies": [
-        {
-          "taskId": "6058121c-32fd-4ab2-8552-11a5c59750fb"
-        }
-      ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T08:53:22.168Z",
-      "relatedFiles": [
-        {
-          "path": "src/services/supplierApi.ts",
-          "type": "REFERENCE",
-          "description": "参考现有API调用模式",
-          "lineStart": 90,
-          "lineEnd": 120
+          "lineEnd": 1
         },
         {
-          "path": "src/utils/",
-          "type": "CREATE",
-          "description": "创建故障转移管理工具类",
+          "path": "ai-tools-client/vite.config.ts",
+          "type": "REFERENCE",
+          "description": "参考Vite配置验证优化效果",
           "lineStart": 1,
           "lineEnd": 50
         }
       ],
-      "implementationGuide": "1. 设计故障检测算法\\n2. 实现自动切换触发逻辑\\n3. 配置切换策略管理\\n4. 收集和分析性能数据\\n5. 实现监控仪表板\\n\\n// 故障转移核心逻辑\\nclass FailoverManager {\\n  async checkAndTriggerFailover(supplierType: string) {\\n    const activeSupplier = await this.getActiveSupplier(supplierType)\\n    const healthResult = await this.checkHealth(activeSupplier.id)\\n    \\n    if (this.shouldTriggerFailover(healthResult)) {\\n      const backupSupplier = await this.findBestBackup(supplierType)\\n      await this.executeAutoFailover(activeSupplier.id, backupSupplier.id)\\n    }\\n  }\\n  \\n  private shouldTriggerFailover(health: SupplierHealth): boolean {\\n    return !health.isHealthy || \\n           health.consecutiveFailures >= this.maxFailures ||\\n           health.responseTime > this.maxResponseTime\\n  }\\n}",
-      "verificationCriteria": "故障转移逻辑正确，监控数据准确，自动切换可靠，性能指标有效",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "成功实现了自动故障转移和监控功能。创建了完整的FailoverManager工具类（369行），实现了智能故障检测算法、自动备选供应商选择、性能趋势分析等核心功能。同时创建了MonitoringDashboard组件（913行），提供实时监控、性能图表、关键问题警报和数据导出功能。所有代码通过TypeScript类型检查，与现有架构完美集成。",
-      "completedAt": "2025-11-08T08:53:22.166Z"
-    },
-    {
-      "id": "55d555d0-0660-48aa-a313-64e0c5d02da6",
-      "name": "集成测试和功能验证",
-      "description": "对供应商切换模块进行全面的集成测试和功能验证。包括健康检查功能测试、自动故障转移测试、手动切换测试、性能监控测试、界面交互测试等。确保所有功能正常工作，与现有系统完美集成。",
-      "notes": "测试应覆盖正常流程、异常情况、边界条件和性能要求。重点关注与现有系统的集成兼容性。",
-      "status": "completed",
-      "dependencies": [
-        {
-          "taskId": "b7e8fd79-b272-4b0a-8d92-64ae32e4d6d4"
-        }
-      ],
-      "createdAt": "2025-11-08T08:20:51.402Z",
-      "updatedAt": "2025-11-08T09:09:23.101Z",
-      "relatedFiles": [
-        {
-          "path": ".claude/test-plan.md",
-          "type": "REFERENCE",
-          "description": "参考阶段6测试计划模式",
-          "lineStart": 1,
-          "lineEnd": 50
-        },
-        {
-          "path": ".claude/",
-          "type": "CREATE",
-          "description": "创建阶段7测试计划文档",
-          "lineStart": 1,
-          "lineEnd": 100
-        }
-      ],
-      "implementationGuide": "1. 制定详细测试计划\\n2. 测试健康检查功能\\n3. 验证故障转移机制\\n4. 测试手动切换流程\\n5. 验证性能监控\\n6. 进行界面交互测试\\n7. 执行端到端集成测试\\n\\n// 测试用例示例\\ndescribe('供应商切换模块', () => {\\n  test('健康检查功能', async () => {\\n    const result = await supplierApi.checkSupplierHealth(1)\\n    expect(result.isHealthy).toBeDefined()\\n    expect(result.responseTime).toBeGreaterThan(0)\\n  })\\n  \\n  test('自动故障转移', async () => {\\n    // 模拟供应商故障\\n    // 验证自动切换触发\\n    // 确认切换结果\\n  })\\n})",
-      "verificationCriteria": "所有测试用例通过，功能验证完整，性能指标达标，与现有系统集成无问题",
-      "analysisResult": "阶段7供应商切换模块实现：基于现有架构扩展智能供应商切换功能，包括健康检查、自动故障转移、性能监控和切换策略管理。通过复用现有的数据模型、API模式、状态管理和界面组件，最大化代码复用，确保系统一致性和可维护性。",
-      "summary": "阶段7集成测试验证完成：TypeScript类型检查通过，构建成功。修复了MonitoringDashboard组件的模板标签闭合问题，所有供应商切换模块功能已完整实现并集成，包括健康检查、自动故障转移、监控仪表板等核心功能。",
-      "completedAt": "2025-11-08T09:09:23.097Z"
+      "implementationGuide": "1. 运行类型检查：npm run type-check\\n2. 运行生产构建：npm run build\\n3. 分析构建产物\\n  - 检查dist目录结构\\n  - 验证chunk文件分离情况\\n  - 确认主包体积 < 800KB（gzip后）\\n4. 使用rollup-plugin-visualizer分析包组成\\n5. 测试Tauri打包：npm run tauri:build\\n6. 验证生成的安装包\\n\\n验证流程：\\nstep 1: 清理旧构建 (rm -rf dist)\\nstep 2: 执行类型检查\\nstep 3: 执行构建\\nstep 4: 检查构建输出和警告\\nstep 5: 验证chunk分离\\nstep 6: 测量包体积\\nstep 7: 执行Tauri打包\\n",
+      "verificationCriteria": "TypeScript检查通过，构建成功无错误，主包体积达标（<800KB gzip），代码正确分割，Tauri打包成功生成安装包，所有功能正常运行",
+      "analysisResult": "阶段9目标：优化应用性能，准备生产环境部署。通过Vite构建优化、代码分割、Tauri打包配置和完善文档，实现性能提升和部署就绪。预期主包体积减少30-40%，第三方库独立打包，文档完整覆盖用户和开发者需求。"
     }
   ]
 }

@@ -1,4 +1,4 @@
-import type { WorkMode } from './index'
+import type { WorkMode, Supplier, McpTemplate } from './index'
 
 // 配置文件类型
 export type ConfigType = 'claude' | 'codex' | 'settings' | 'auth'
@@ -100,4 +100,222 @@ export interface ConfigDiffResult {
     old: string
     new: string
   }>
+}
+
+// 配置模板变量
+export interface ConfigVariable {
+  name: string
+  value: string
+  description?: string
+}
+
+// 模板生成结果
+export interface TemplateGenerationResult {
+  success: boolean
+  content: string
+  format: 'json' | 'toml'
+  errors?: string[]
+}
+
+// 配置操作结果
+export interface ConfigOperationResult {
+  success: boolean
+  message: string
+  data?: any
+}
+
+// 配置预览参数
+export interface ConfigPreviewParams {
+  configType: ConfigType
+  claudeSupplierId?: number
+  codexSupplierId?: number
+  mcpTemplateIds?: number[]
+  variables?: Record<string, string>
+}
+
+// 配置验证结果
+export interface ConfigValidationResult {
+  valid: boolean
+  error?: string
+  warnings?: string[]
+}
+
+// 配置应用结果
+export interface ConfigApplyResult {
+  success: boolean
+  message: string
+  configPath?: string
+  backupId?: number
+  appliedAt?: string
+}
+
+// 配置文件路径映射
+export interface ConfigPathMap {
+  [key: string]: string
+}
+
+// 配置模板引擎接口
+export interface IConfigTemplateEngine {
+  generateClaudeConfig(
+    claudeSupplier: Supplier,
+    templates: McpTemplate[],
+    variables?: Record<string, string>
+  ): Promise<TemplateGenerationResult>
+
+  generateCodexConfig(
+    codexSupplier: Supplier,
+    templates: McpTemplate[],
+    variables?: Record<string, string>
+  ): Promise<TemplateGenerationResult>
+
+  replaceVariables(content: string, variables: Record<string, string>): string
+
+  extractVariables(content: string): string[]
+
+  validateConfig(content: string, configType: ConfigType): ConfigValidationResult
+}
+
+// 配置文件管理器接口
+export interface IConfigFileManager {
+  backupConfig(
+    configType: ConfigType,
+    content: string,
+    description?: string
+  ): Promise<ConfigOperationResult>
+
+  getConfigHistory(configType: ConfigType, limit?: number): Promise<ConfigBackup[]>
+
+  getLatestConfigBackup(configType: ConfigType): Promise<ConfigBackup | null>
+
+  restoreConfigFromBackup(backupId: number): Promise<ConfigOperationResult>
+
+  applyConfig(
+    configType: ConfigType,
+    content: string,
+    createBackup?: boolean
+  ): Promise<ConfigApplyResult>
+
+  previewConfig(params: ConfigPreviewParams): Promise<ConfigOperationResult>
+
+  validateConfigFormat(content: string, configType: ConfigType): ConfigValidationResult
+
+  compareConfigs(oldContent: string, newContent: string): ConfigDiffResult
+
+  deleteConfigHistory(backupId: number): Promise<ConfigOperationResult>
+
+  cleanupOldConfigHistory(configType: ConfigType, keepCount: number): Promise<ConfigOperationResult>
+
+  getConfigPath(configType: ConfigType): string
+
+  getSupportedConfigTypes(): ConfigType[]
+}
+
+// 配置历史查询参数
+export interface ConfigHistoryQuery {
+  configType?: ConfigType
+  operationType?: 'backup' | 'update' | 'restore'
+  startDate?: string
+  endDate?: string
+  limit?: number
+  offset?: number
+}
+
+// 配置历史统计
+export interface ConfigHistoryStats {
+  totalBackups: number
+  totalRestores: number
+  lastBackupTime?: string
+  oldestBackupTime?: string
+  configTypes: Record<ConfigType, number>
+}
+
+// 批量配置操作
+export interface BatchConfigOperation {
+  operationType: 'backup' | 'restore' | 'apply' | 'delete'
+  configTypes: ConfigType[]
+  targetIds?: number[]
+  options?: {
+    createBackup?: boolean
+    description?: string
+    variables?: Record<string, string>
+  }
+}
+
+// 批量操作结果
+export interface BatchOperationResult {
+  success: boolean
+  totalProcessed: number
+  successCount: number
+  failureCount: number
+  results: Array<{
+    configType: ConfigType
+    success: boolean
+    message?: string
+    data?: any
+  }>
+  errors?: string[]
+}
+
+// 配置导出/导入
+export interface ConfigExportData {
+  version: string
+  exportTime: string
+  configs: Array<{
+    configType: ConfigType
+    content: string
+    description?: string
+    variables?: Record<string, string>
+  }>
+  history: ConfigBackup[]
+  metadata: {
+    platform: string
+    appVersion: string
+    totalConfigs: number
+  }
+}
+
+export interface ConfigImportData {
+  configs: Array<{
+    configType: ConfigType
+    content: string
+    description?: string
+  }>
+  importHistory?: boolean
+  overwriteExisting?: boolean
+}
+
+// 配置同步状态
+export interface ConfigSyncStatus {
+  lastSyncTime?: string
+  syncInProgress: boolean
+  hasUnsavedChanges: boolean
+  conflictResolution?: 'local' | 'remote' | 'manual'
+}
+
+// 配置设置
+export interface ConfigSettings {
+  autoBackup: boolean
+  backupRetentionDays: number
+  maxBackupCount: number
+  enableSync: boolean
+  syncInterval: number // 分钟
+  validationLevel: 'strict' | 'normal' | 'relaxed'
+  formatOnSave: boolean
+}
+
+// 配置事件
+export interface ConfigEvent {
+  id: string
+  type: 'backup' | 'restore' | 'apply' | 'validate' | 'sync'
+  configType: ConfigType
+  timestamp: string
+  userId?: string
+  details?: Record<string, any>
+  status: 'pending' | 'success' | 'failed'
+  message?: string
+}
+
+// 配置事件监听器
+export interface ConfigEventListener {
+  (event: ConfigEvent): void
 }

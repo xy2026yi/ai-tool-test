@@ -55,6 +55,68 @@ export interface TauriCommands {
   get_database_stats: () => Promise<any>
   test_database_connection: () => Promise<any>
   export_all_data: () => Promise<any>
+
+  // 配置文件应用命令
+  apply_config_file: (params: {
+    configType: string
+    configPath: string
+    content: string
+    createBackup?: boolean
+  }) => Promise<any>
+
+  // 配置文件读取命令
+  read_config_file: (params: {
+    configType: string
+    configPath: string
+  }) => Promise<any>
+
+  // 配置文件写入命令
+  write_config_file: (params: {
+    configType: string
+    configPath: string
+    content: string
+  }) => Promise<any>
+
+  // 配置文件验证命令
+  validate_config_file: (params: {
+    configType: string
+    content: string
+  }) => Promise<any>
+
+  // 配置文件比较命令
+  compare_config_files: (params: {
+    oldContent: string
+    newContent: string
+  }) => Promise<any>
+
+  // 配置导出导入命令
+  export_configurations: (params?: {
+    configTypes?: string[]
+    includeHistory?: boolean
+  }) => Promise<any>
+
+  import_configurations: (params: {
+    data: any
+    overwriteExisting?: boolean
+    importHistory?: boolean
+  }) => Promise<any>
+
+  // 配置同步命令
+  sync_configurations: (params: {
+    configTypes?: string[]
+    force?: boolean
+  }) => Promise<any>
+
+  // 配置统计命令
+  get_config_stats: (params?: {
+    configType?: string
+  }) => Promise<any>
+
+  // 配置设置命令
+  get_config_settings: () => Promise<any>
+  update_config_settings: (params: {
+    settings: any
+  }) => Promise<any>
 }
 
 declare global {

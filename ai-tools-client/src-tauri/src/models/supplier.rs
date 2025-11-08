@@ -16,6 +16,14 @@ pub struct Supplier {
     pub haiku_model: Option<String>,
     pub is_active: Option<i64>, // SQLite uses INTEGER for boolean
     pub sort_order: Option<i64>,
+    // 健康检查相关字段
+    pub is_healthy: Option<i64>, // SQLite uses INTEGER for boolean
+    pub last_check_time: Option<DateTime<Utc>>,
+    pub response_time: Option<i64>, // 毫秒
+    pub consecutive_failures: Option<i64>, // 连续失败次数
+    pub uptime_percentage: Option<f64>, // 运行时间百分比
+    pub total_requests: Option<i64>, // 总请求数
+    pub failed_requests: Option<i64>, // 失败请求数
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -52,6 +60,75 @@ pub struct UpdateSupplierRequest {
 pub struct ConnectionTestResult {
     pub success: bool,
     pub response_time: Option<i64>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupplierHealth {
+    pub supplier_id: i64,
+    pub is_healthy: bool,
+    pub last_check_time: DateTime<Utc>,
+    pub response_time: i64,
+    pub consecutive_failures: i64,
+    pub uptime_percentage: f64,
+    pub total_requests: i64,
+    pub failed_requests: i64,
+    pub status: 'healthy' | 'degraded' | 'unhealthy',
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SupplierSwitchProgress {
+    pub total_steps: u8,
+    pub completed_steps: u8,
+    pub overall_progress: u8, // 0-100
+    pub current_step: String,
+    pub from_supplier: i64,
+    pub to_supplier: i64,
+    pub start_time: DateTime<Utc>,
+    pub estimated_completion: Option<DateTime<Utc>>,
+    pub rollback_available: bool,
+    pub is_completed: bool,
+    pub has_error: bool,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FailoverConfig {
+    pub enabled: bool,
+    pub trigger_conditions: Vec<FailoverTrigger>,
+    pub auto_rollback: bool,
+    pub rollback_delay_seconds: u32,
+    pub max_consecutive_failures: u32,
+    pub max_response_time_ms: u32,
+    pub min_success_rate: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FailoverTrigger {
+    pub condition_type: 'consecutive_failures' | 'response_time' | 'success_rate',
+    pub threshold: f64,
+    pub evaluation_window_minutes: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SupplierSwitchRequest {
+    pub from_supplier_id: i64,
+    pub to_supplier_id: i64,
+    pub switch_reason: 'manual' | 'auto_failover' | 'health_check',
+    pub create_backup: bool,
+    pub rollback_on_failure: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SupplierSwitchResult {
+    pub success: bool,
+    pub message: String,
+    pub from_supplier_id: i64,
+    pub to_supplier_id: i64,
+    pub switch_time: DateTime<Utc>,
+    pub rollback_available: bool,
+    pub backup_id: Option<i64>,
     pub error: Option<String>,
 }
 

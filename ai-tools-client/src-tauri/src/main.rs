@@ -57,6 +57,15 @@ async fn main() {
             import_suppliers,
             export_suppliers,
 
+            // Supplier health check and switch commands
+            check_supplier_health,
+            check_all_suppliers_health,
+            switch_supplier,
+            auto_failover,
+            get_failover_config,
+            update_failover_config,
+            get_supplier_switch_progress,
+
             // MCP Template commands
             list_mcp_templates,
             create_mcp_template,

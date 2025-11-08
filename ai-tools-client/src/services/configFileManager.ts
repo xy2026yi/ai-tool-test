@@ -304,7 +304,7 @@ export class ConfigFileManager {
     try {
       const { configType, claudeSupplierId, codexSupplierId, mcpTemplateIds = [], variables = {} } = params
 
-      let suppliers: Supplier[] = []
+      const suppliers: Supplier[] = []
       let templates: McpTemplate[] = []
 
       // 获取供应商信息

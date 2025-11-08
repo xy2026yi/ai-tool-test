@@ -95,10 +95,10 @@ const loadData = async () => {
     
     // 设置默认选择
     if (selectedClaudeSupplier.value === null && claudeSuppliers.value.length > 0) {
-      selectedClaudeSupplier.value = claudeSuppliers.value[0].id!
+      selectedClaudeSupplier.value = claudeSuppliers.value[0]?.id || null
     }
     if (selectedCodexSupplier.value === null && codexSuppliers.value.length > 0) {
-      selectedCodexSupplier.value = codexSuppliers.value[0].id!
+      selectedCodexSupplier.value = codexSuppliers.value[0]?.id || null
     }
   } catch (error) {
     ElMessage.error('加载数据失败')
@@ -121,8 +121,8 @@ const resetForm = () => {
   createBackup.value = true
 }
 
-// 执行模式切换
-const executeSwitch = async () => {
+// 基础执行切换方法（已弃用，保留以防兼容性问题）
+const executeBasicSwitch = async () => {
   if (!isFormValid.value) {
     ElMessage.warning('请完善配置信息')
     return
@@ -131,7 +131,7 @@ const executeSwitch = async () => {
   try {
     switching.value = true
     switchDialogVisible.value = false
-    
+
     // 初始化进度
     switchProgress.value = {
       totalSteps: 5,

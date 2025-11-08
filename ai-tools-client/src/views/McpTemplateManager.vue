@@ -27,14 +27,15 @@ const filters = ref({
 })
 
 // 表单数据
-const formData = ref<CreateMcpTemplateRequest>({
+const formData = ref<CreateMcpTemplateRequest & { version: string }>({
   name: '',
   aiType: 'claude',
   platformType: 'unix',
   configContent: '',
   description: '',
   category: '',
-  tags: []
+  tags: [],
+  version: '1.0.0'
 })
 
 // 配置编辑器数据
@@ -120,7 +121,8 @@ const showCreateDialog = () => {
     configContent: '',
     description: '',
     category: '',
-    tags: []
+    tags: [],
+    version: '1.0.0'
   }
   dialogVisible.value = true
 }
@@ -136,7 +138,8 @@ const showEditDialog = (template: McpTemplate) => {
     configContent: template.configContent,
     description: template.description || '',
     category: template.category || '',
-    tags: template.tags ? [...template.tags] : []
+    tags: template.tags ? [...template.tags] : [],
+    version: template.version || '1.0.0'
   }
   dialogVisible.value = true
 }

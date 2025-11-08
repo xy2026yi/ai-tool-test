@@ -27,7 +27,7 @@ export interface OperationResult {
 }
 
 // 配置相关类型
-export type PlatformType = 'windows' | 'macos' | 'linux'
+export type PlatformType = 'windows' | 'macos' | 'linux' | 'unix'
 export type AiType = 'claude' | 'codex'
 export type WorkMode = 'claude_only' | 'codex_only' | 'claude_codex'
 

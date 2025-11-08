@@ -36,6 +36,7 @@ ai-tools-client/*.ntvs*
 ai-tools-client/*.njsproj
 ai-tools-client/*.sln
 ai-tools-client/*.sw?
+ai-tools-client/src-tauri/target
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -44,6 +45,7 @@ ai-tools-client/*.sw?
 *.njsproj
 *.sln
 *.sw?
+src-tauri/target
 
 ai-tools-client/*.tsbuildinfo
 *.tsbuildinfo

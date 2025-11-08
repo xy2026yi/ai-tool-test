@@ -20,12 +20,14 @@ ai-tools-client/dist
 ai-tools-client/dist-ssr
 ai-tools-client/coverage
 ai-tools-client/*.local
+.vite
 node_modules
 .DS_Store
 dist
 dist-ssr
 coverage
 *.local
+ai-tools-client/.vite
 
 # Editor directories and files
 ai-tools-client/.vscode/*
@@ -37,6 +39,7 @@ ai-tools-client/*.njsproj
 ai-tools-client/*.sln
 ai-tools-client/*.sw?
 ai-tools-client/src-tauri/target
+ai-tools-client/src-tauri/Cargo.lock
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -46,6 +49,7 @@ ai-tools-client/src-tauri/target
 *.sln
 *.sw?
 src-tauri/target
+src-tauri/Cargo.lock
 
 ai-tools-client/*.tsbuildinfo
 *.tsbuildinfo
@@ -68,3 +72,19 @@ __screenshots__/
 
 # task
 .shrimp
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.sass-cache/
+.stylelintcache
+ai-tools-client/*.tmp
+ai-tools-client/*.temp
+ai-tools-client/.cache/
+ai-tools-client/.sass-cache/
+ai-tools-client/.stylelintcache
+
+# Tauri 开发时的临时文件
+src-tauri/src-tauri.conf.json
+ai-tools-client/src-tauri/src-tauri.conf.json

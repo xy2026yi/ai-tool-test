@@ -14,6 +14,14 @@ dist-ssr
 coverage
 *.local
 
+*.tmp
+*.temp
+.cache/
+.sass-cache/
+.stylelintcache
+
+src-tauri/src-tauri.conf.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,6 +31,9 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+.vite
+src-tauri/target
+src-tauri/Cargo.lock
 
 *.tsbuildinfo
 

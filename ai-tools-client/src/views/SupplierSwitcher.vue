@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSupplierSwitchStore } from '@/stores/supplierSwitch'
+import MonitoringDashboard from '@/components/MonitoringDashboard.vue'
 import type {
   Supplier,
   SupplierHealth,
@@ -33,6 +34,10 @@ const failoverConfig = ref<FailoverConfig | null>(null)
 
 // 历史记录
 const historyVisible = ref(false)
+
+// 监控相关
+const monitoringVisible = ref(false)
+const currentTab = ref('overview') // overview, switching, monitoring
 
 // 进度显示相关
 const showDetails = ref(false)
@@ -145,6 +150,35 @@ const refreshHealthStatus = async () => {
   } catch (error) {
     ElMessage.error('健康状态更新失败')
     console.error(error)
+  }
+}
+
+// 运行健康检查（概览页面使用）
+const runHealthCheck = async () => {
+  loading.value = true
+  try {
+    await supplierStore.runHealthCheck()
+    ElMessage.success('健康检查完成')
+  } catch (error) {
+    ElMessage.error('健康检查失败')
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 刷新监控数据
+const refreshMonitoringData = async () => {
+  loading.value = true
+  try {
+    await supplierStore.runHealthCheck()
+    // 强制更新监控组件数据
+    ElMessage.success('监控数据已刷新')
+  } catch (error) {
+    ElMessage.error('监控数据刷新失败')
+    console.error(error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -557,106 +591,202 @@ onUnmounted(() => {
           </div>
         </template>
 
-        <el-tabs>
-          <el-tab-pane label="Claude 供应商" name="claude">
-            <el-table :data="supplierStore.claudeSuppliers" stripe>
-              <el-table-column prop="name" label="供应商名称" />
-              <el-table-column label="状态" width="120">
-                <template #default="{ row }">
-                  <el-tag :type="getHealthStatusType(row.id!)">
-                    {{ getHealthStatusText(row.id!) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="响应时间" width="120">
-                <template #default="{ row }">
-                  <span :style="{ color: getResponseTimeColor(supplierStore.healthStatus.get(row.id!)?.responseTime || 0) }">
-                    {{ supplierStore.healthStatus.get(row.id!)?.responseTime ? `${supplierStore.healthStatus.get(row.id!)?.responseTime}ms` : '-' }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column label="连续失败" width="100">
-                <template #default="{ row }">
-                  {{ supplierStore.healthStatus.get(row.id!)?.consecutiveFailures || 0 }}
-                </template>
-              </el-table-column>
-              <el-table-column label="运行时间" width="100">
-                <template #default="{ row }">
-                  {{ Math.round(supplierStore.healthStatus.get(row.id!)?.uptimePercentage || 0) }}%
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="200">
-                <template #default="{ row }">
-                  <el-button
-                    size="small"
-                    type="primary"
-                    @click="executeAutoFailover('claude')"
-                    :disabled="row.isActive || supplierStore.isSwitching"
-                  >
-                    设为活跃
-                  </el-button>
-                  <el-button
-                    size="small"
-                    @click="refreshHealthStatus"
-                  >
-                    检查
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+        <el-tabs v-model="currentTab">
+          <el-tab-pane label="概览" name="overview">
+            <div class="overview-section">
+              <!-- 健康状态概览卡片 -->
+              <div class="health-overview">
+                <el-row :gutter="20">
+                  <el-col :span="6">
+                    <el-card class="overview-card">
+                      <div class="overview-number">{{ supplierStore.suppliers.length }}</div>
+                      <div class="overview-label">个供应商</div>
+                    </el-card>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-card class="overview-card healthy">
+                      <div class="overview-number">{{ supplierStore.healthySuppliers.length }}</div>
+                      <div class="overview-label">个健康</div>
+                    </el-card>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-card class="overview-card unhealthy">
+                      <div class="overview-number">{{ supplierStore.unhealthySuppliers.length }}</div>
+                      <div class="overview-label">个异常</div>
+                    </el-card>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-card class="overview-card switching">
+                      <div class="overview-number">{{ supplierStore.isReadyForSwitch ? '就绪' : '忙碌' }}</div>
+                      <div class="overview-label">切换状态</div>
+                    </el-card>
+                  </el-col>
+                </el-row>
+              </div>
+
+              <!-- 快速操作按钮 -->
+              <div class="quick-actions" style="margin-top: 20px;">
+                <el-row :gutter="15">
+                  <el-col :span="6">
+                    <el-button
+                      type="primary"
+                      @click="runHealthCheck"
+                      :loading="loading"
+                      style="width: 100%"
+                    >
+                      运行健康检查
+                    </el-button>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-button
+                      type="warning"
+                      @click="switchDialogVisible = true"
+                      :disabled="!supplierStore.isReadyForSwitch"
+                      style="width: 100%"
+                    >
+                      手动切换供应商
+                    </el-button>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-button
+                      type="info"
+                      @click="configDialogVisible = true"
+                      style="width: 100%"
+                    >
+                      故障转移配置
+                    </el-button>
+                  </el-col>
+                  <el-col :span="6">
+                    <el-button
+                      type="success"
+                      @click="historyVisible = true"
+                      style="width: 100%"
+                    >
+                      切换历史
+                    </el-button>
+                  </el-col>
+                </el-row>
+              </div>
+
+              <!-- 实时监控预览 -->
+              <div style="margin-top: 20px;">
+                <el-card header="实时状态监控">
+                  <MonitoringDashboard :compact="true" />
+                </el-card>
+              </div>
+            </div>
           </el-tab-pane>
 
-          <el-tab-pane label="Codex 供应商" name="codex">
-            <el-table :data="supplierStore.codexSuppliers" stripe>
-              <el-table-column prop="name" label="供应商名称" />
-              <el-table-column label="状态" width="120">
-                <template #default="{ row }">
-                  <el-tag :type="getHealthStatusType(row.id!)">
-                    {{ getHealthStatusText(row.id!) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="响应时间" width="120">
-                <template #default="{ row }">
-                  <span :style="{ color: getResponseTimeColor(supplierStore.healthStatus.get(row.id!)?.responseTime || 0) }">
-                    {{ supplierStore.healthStatus.get(row.id!)?.responseTime ? `${supplierStore.healthStatus.get(row.id!)?.responseTime}ms` : '-' }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column label="连续失败" width="100">
-                <template #default="{ row }">
-                  {{ supplierStore.healthStatus.get(row.id!)?.consecutiveFailures || 0 }}
-                </template>
-              </el-table-column>
-              <el-table-column label="运行时间" width="100">
-                <template #default="{ row }">
-                  {{ Math.round(supplierStore.healthStatus.get(row.id!)?.uptimePercentage || 0) }}%
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="200">
-                <template #default="{ row }">
-                  <el-button
-                    size="small"
-                    type="primary"
-                    @click="executeAutoFailover('codex')"
-                    :disabled="row.isActive || supplierStore.isSwitching"
-                  >
-                    设为活跃
-                  </el-button>
-                  <el-button
-                    size="small"
-                    @click="refreshHealthStatus"
-                  >
-                    检查
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+          <el-tab-pane label="供应商管理" name="suppliers">
+            <el-tabs>
+              <el-tab-pane label="Claude 供应商" name="claude">
+                <el-table :data="supplierStore.claudeSuppliers" stripe>
+                  <el-table-column prop="name" label="供应商名称" />
+                  <el-table-column label="状态" width="120">
+                    <template #default="{ row }">
+                      <el-tag :type="getHealthStatusType(row.id!)">
+                        {{ getHealthStatusText(row.id!) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="响应时间" width="120">
+                    <template #default="{ row }">
+                      <span :style="{ color: getResponseTimeColor(supplierStore.healthStatus.get(row.id!)?.responseTime || 0) }">
+                        {{ supplierStore.healthStatus.get(row.id!)?.responseTime ? `${supplierStore.healthStatus.get(row.id!)?.responseTime}ms` : '-' }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="连续失败" width="100">
+                    <template #default="{ row }">
+                      {{ supplierStore.healthStatus.get(row.id!)?.consecutiveFailures || 0 }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="运行时间" width="100">
+                    <template #default="{ row }">
+                      {{ Math.round(supplierStore.healthStatus.get(row.id!)?.uptimePercentage || 0) }}%
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        @click="executeAutoFailover('claude')"
+                        :disabled="row.isActive || supplierStore.isSwitching"
+                      >
+                        设为活跃
+                      </el-button>
+                      <el-button
+                        size="small"
+                        @click="refreshHealthStatus"
+                      >
+                        检查
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-tab-pane>
+
+              <el-tab-pane label="Codex 供应商" name="codex">
+                <el-table :data="supplierStore.codexSuppliers" stripe>
+                  <el-table-column prop="name" label="供应商名称" />
+                  <el-table-column label="状态" width="120">
+                    <template #default="{ row }">
+                      <el-tag :type="getHealthStatusType(row.id!)">
+                        {{ getHealthStatusText(row.id!) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="响应时间" width="120">
+                    <template #default="{ row }">
+                      <span :style="{ color: getResponseTimeColor(supplierStore.healthStatus.get(row.id!)?.responseTime || 0) }">
+                        {{ supplierStore.healthStatus.get(row.id!)?.responseTime ? `${supplierStore.healthStatus.get(row.id!)?.responseTime}ms` : '-' }}
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="连续失败" width="100">
+                    <template #default="{ row }">
+                      {{ supplierStore.healthStatus.get(row.id!)?.consecutiveFailures || 0 }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="运行时间" width="100">
+                    <template #default="{ row }">
+                      {{ Math.round(supplierStore.healthStatus.get(row.id!)?.uptimePercentage || 0) }}%
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        @click="executeAutoFailover('codex')"
+                        :disabled="row.isActive || supplierStore.isSwitching"
+                      >
+                        设为活跃
+                      </el-button>
+                      <el-button
+                        size="small"
+                        @click="refreshHealthStatus"
+                      >
+                        检查
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-tab-pane>
+            </el-tabs>
+          </el-tab-pane>
+
+          <el-tab-pane label="实时监控" name="monitoring">
+            <div class="monitoring-full-section">
+              <MonitoringDashboard />
+            </div>
           </el-tab-pane>
         </el-tabs>
       </el-card>
     </div>
 
+  
     <!-- 切换进度显示 -->
     <div v-if="supplierStore.isSwitching || supplierStore.switchProgress" class="progress-section">
       <el-card>

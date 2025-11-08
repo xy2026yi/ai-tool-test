@@ -325,7 +325,8 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
-          </el-col>
+          </el-card>
+        </el-col>
 
         <el-col :span="6">
           <el-card class="overview-card">

@@ -431,6 +431,18 @@ pub async fn auto_failover(
 ) -> Result<ApiResponse<SupplierSwitchResult>, String> {
     let pool = state.db_pool.lock().await;
 
+    // 获取故障转移配置
+    let config_result = get_failover_config(state.clone(), supplier_type.clone()).await?;
+    let config = match config_result.data {
+        Some(c) => c,
+        None => return Ok(ApiResponse::error("无法获取故障转移配置".to_string())),
+    };
+
+    // 如果故障转移未启用，直接返回
+    if !config.enabled {
+        return Ok(ApiResponse::error("自动故障转移已禁用".to_string()));
+    }
+
     // 获取当前激活的供应商
     let current_active = Supplier::get_active(&pool, &supplier_type)
         .await
@@ -442,37 +454,57 @@ pub async fn auto_failover(
             .await?;
 
         if let Some(health) = health_result.data {
-            // 如果供应商不健康，执行故障转移
-            if !health.is_healthy || health.consecutive_failures >= 3 {
-                // 获取备用供应商列表
+            // 智能故障转移决策
+            let should_failover = evaluate_failover_conditions(&health, &config);
+
+            if should_failover {
+                // 获取所有备用供应商并评估其健康状况
                 let backup_suppliers = Supplier::get_by_type(&pool, &supplier_type)
                     .await
                     .map_err(|e| format!("获取备用供应商失败: {}", e))?;
 
-                // 找到健康的备用供应商
+                // 评估备用供应商并找到最佳候选
+                let mut best_candidate: Option<(Supplier, SupplierHealth, f64)> = None;
+                let mut candidates = Vec::new();
+
                 for supplier in backup_suppliers {
                     if let Some(id) = supplier.id {
                         if id != current_supplier.id.unwrap() {
-                            let backup_health = check_supplier_health(state.clone(), id).await?;
-                            if let Some(h) = backup_health.data {
-                                if h.is_healthy {
-                                    // 执行切换
-                                    let switch_request = SupplierSwitchRequest {
-                                        from_supplier_id: current_supplier.id.unwrap(),
-                                        to_supplier_id: id,
-                                        switch_reason: "auto_failover".into(),
-                                        create_backup: true,
-                                        rollback_on_failure: true,
-                                    };
+                            if let Ok(backup_health_result) = check_supplier_health(state.clone(), id).await {
+                                if let Some(h) = backup_health_result.data {
+                                    if h.is_healthy {
+                                        // 计算备用供应商的综合评分
+                                        let score = calculate_supplier_score(&h, &config);
+                                        candidates.push((supplier.clone(), h.clone(), score));
 
-                                    return switch_supplier(state.clone(), switch_request).await;
+                                        // 更新最佳候选
+                                        if best_candidate.is_none() || score > best_candidate.as_ref().unwrap().2 {
+                                            best_candidate = Some((supplier, h, score));
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                return Ok(ApiResponse::error("没有可用的备用供应商".to_string()));
+                // 如果找到最佳候选，执行切换
+                if let Some((best_supplier, best_health, score)) = best_candidate {
+                    println!("选择备用供应商: {} (评分: {:.2})", best_supplier.name, score);
+
+                    let switch_request = SupplierSwitchRequest {
+                        from_supplier_id: current_supplier.id.unwrap(),
+                        to_supplier_id: best_supplier.id.unwrap(),
+                        switch_reason: format!("auto_failover: 智能故障转移，响应时间: {}ms, 成功率: {:.1}%",
+                                              health.response_time, health.uptime_percentage),
+                        create_backup: true,
+                        rollback_on_failure: config.auto_rollback,
+                    };
+
+                    return switch_supplier(state.clone(), switch_request).await;
+                } else {
+                    return Ok(ApiResponse::error("没有健康的备用供应商可用".to_string()));
+                }
             } else {
                 return Ok(ApiResponse::error("当前供应商健康，无需故障转移".to_string()));
             }
@@ -482,6 +514,68 @@ pub async fn auto_failover(
     } else {
         return Ok(ApiResponse::error("没有激活的供应商".to_string()));
     }
+}
+
+// 评估故障转移条件
+fn evaluate_failover_conditions(health: &SupplierHealth, config: &FailoverConfig) -> bool {
+    // 条件1: 连续失败次数超过阈值
+    if health.consecutive_failures >= config.max_consecutive_failures {
+        return true;
+    }
+
+    // 条件2: 响应时间超过阈值且成功率低
+    if health.response_time > config.max_response_time_ms && health.uptime_percentage < config.min_success_rate {
+        return true;
+    }
+
+    // 条件3: 成功率过低
+    if health.uptime_percentage < config.min_success_rate - 10.0 {
+        return true;
+    }
+
+    // 条件4: 完全不健康
+    if !health.is_healthy {
+        return true;
+    }
+
+    false
+}
+
+// 计算供应商综合评分
+fn calculate_supplier_score(health: &SupplierHealth, config: &FailoverConfig) -> f64 {
+    let mut score = 100.0;
+
+    // 成功率权重 (40%)
+    let success_rate_score = (health.uptime_percentage / 100.0) * 40.0;
+
+    // 响应时间权重 (30%) - 响应时间越短得分越高
+    let response_time_score = if health.response_time > 0 {
+        let optimal_time = config.max_response_time_ms as f64 * 0.5;
+        let actual_score = if health.response_time as f64 <= optimal_time {
+            30.0
+        } else {
+            let penalty = ((health.response_time as f64 - optimal_time) / optimal_time).min(2.0) * 15.0;
+            (30.0 - penalty).max(0.0)
+        };
+        actual_score
+    } else {
+        15.0 // 默认中等分数
+    };
+
+    // 连续失败惩罚 (20%) - 失败次数越少得分越高
+    let failure_penalty = (health.consecutive_failures as f64 / config.max_consecutive_failures as f64) * 20.0;
+    let failure_score = 20.0 - failure_penalty.min(20.0);
+
+    // 稳定性权重 (10%) - 基于总请求数和失败数的比例
+    let stability_score = if health.total_requests > 0 {
+        let failure_ratio = health.failed_requests as f64 / health.total_requests as f64;
+        (1.0 - failure_ratio) * 10.0
+    } else {
+        5.0 // 默认中等分数
+    };
+
+    score = success_rate_score + response_time_score + failure_score + stability_score;
+    score.round()
 }
 
 #[tauri::command]

@@ -1,13 +1,42 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useThemeStore } from '@/stores/theme'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+import HelpCenter from '@/components/HelpCenter.vue'
 
 // 初始化应用
 const appStore = useAppStore()
+const themeStore = useThemeStore()
+
+// 帮助中心对话框控制
+const showHelpDialog = ref(false)
+
+const openHelp = () => {
+  showHelpDialog.value = true
+}
+
+// 监听F1键打开帮助
+const handleKeyPress = (event: KeyboardEvent) => {
+  if (event.key === 'F1') {
+    event.preventDefault()
+    openHelp()
+  }
+}
 
 onMounted(() => {
   appStore.initializeApp()
+  themeStore.loadTheme()
+  themeStore.watchSystemTheme()
+  
+  // 添加快捷键监听
+  window.addEventListener('keydown', handleKeyPress)
+})
+
+// 清理监听器
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress)
 })
 </script>
 
@@ -40,6 +69,18 @@ onMounted(() => {
             </el-menu-item>
           </el-menu>
         </div>
+
+        <div class="header-actions">
+          <el-button
+            text
+            circle
+            @click="openHelp"
+            title="帮助中心 (F1)"
+          >
+            <el-icon :size="20"><QuestionFilled /></el-icon>
+          </el-button>
+          <ThemeSwitcher />
+        </div>
       </div>
     </el-header>
 
@@ -65,6 +106,9 @@ onMounted(() => {
       <RouterView v-else />
     </el-main>
   </el-container>
+
+  <!-- 帮助中心 -->
+  <HelpCenter v-model:visible="showHelpDialog" />
 </template>
 
 <style scoped>
@@ -129,5 +173,12 @@ onMounted(() => {
 
 .error-alert {
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: 20px;
 }
 </style>

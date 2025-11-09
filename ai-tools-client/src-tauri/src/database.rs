@@ -12,18 +12,36 @@ pub struct Database {
 impl Database {
     /// 初始化数据库连接
     pub async fn new(database_url: &str) -> Result<Self> {
-        // 创建数据库连接选项
-        let connect_options = SqliteConnectOptions::from_str(database_url)?
-            .create_if_missing(true)
-            .journal_mode(SqliteJournalMode::Wal)
-            .busy_timeout(std::time::Duration::from_secs(30));
+        println!("正在初始化数据库，URL: {}", database_url);
 
-        // 创建连接池
-        let pool = SqlitePool::connect_with(connect_options).await?;
+        // 尝试简单的数据库连接，不使用 WAL 模式
+        let pool = SqlitePool::connect(database_url).await
+            .map_err(|e| {
+                println!("简单连接失败: {:?}", e);
+
+                // 如果简单连接失败，尝试带选项的连接
+                println!("尝试带选项的连接...");
+                let connect_options = SqliteConnectOptions::from_str(database_url)?
+                    .create_if_missing(true)
+                    .busy_timeout(std::time::Duration::from_secs(10));
+
+                SqlitePool::connect_with(connect_options).await
+                    .map_err(|e2| {
+                        println!("带选项连接也失败: {:?}", e2);
+                        anyhow::anyhow!("数据库连接失败: 简单连接={}, 带选项连接={}", e, e2)
+                    })
+            })?;
+
+        println!("数据库连接成功，正在运行迁移...");
 
         // 运行数据库迁移
-        Self::run_migrations(&pool).await?;
+        Self::run_migrations(&pool).await
+            .map_err(|e| {
+                println!("数据库迁移失败: {:?}", e);
+                anyhow::anyhow!("数据库迁移失败: {}", e)
+            })?;
 
+        println!("数据库初始化完成");
         Ok(Database { pool })
     }
 

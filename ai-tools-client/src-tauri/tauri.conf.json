@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "AI工具管理平台",
+  "productName": "AI-Tools-Manager",
   "version": "1.0.0",
   "identifier": "com.ai-tools.manager",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "AI工具管理平台",
+        "title": "AI Tools Manager",
         "width": 1200,
         "height": 800,
         "resizable": true,
@@ -29,8 +29,8 @@
     "publisher": "AI Tools Team",
     "copyright": "Copyright © 2025",
     "category": "DeveloperTool",
-    "shortDescription": "AI工具供应商管理平台",
-    "longDescription": "管理AI工具供应商、MCP服务器模板和工作模式的跨平台桌面应用",
+    "shortDescription": "AI Tools Supplier Management Platform",
+    "longDescription": "Cross-platform desktop application for managing AI tool suppliers, MCP server templates, and work modes",
     "icon": [
       "icons/linux/icon-32x32.png",
       "icons/linux/icon-128x128.png",

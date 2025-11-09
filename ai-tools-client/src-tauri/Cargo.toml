@@ -1,7 +1,7 @@
 [package]
 name = "ai-tools-client"
 version = "0.1.0"
-description = "AI工具管理平台"
+description = "AI Tools Management Platform"
 authors = ["you"]
 edition = "2021"
 

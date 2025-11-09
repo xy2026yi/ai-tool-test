@@ -25,10 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "deb",
-      "rpm"
-    ],
+    "targets": "all",
     "publisher": "AI Tools Team",
     "copyright": "Copyright © 2025",
     "category": "DeveloperTool",
@@ -41,17 +38,31 @@
       "icons/windows/icon-32x32.png",
       "icons/windows/app.ico"
     ],
+    "createArtifacts": true,
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
       },
       "wix": {
         "language": ["zh-CN", "en-US"]
+      },
+      "nsis": {
+        "displayLanguageSelector": false
       }
     },
     "macOS": {
-      "minimumSystemVersion": "10.13"
+      "minimumSystemVersion": "10.13",
+      "entitlements": null,
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "deb": {
+      "depends": []
+    },
+    "appimage": {
+      "bundleMediaFramework": false
     }
+  }
   },
   "plugins": {}
 }

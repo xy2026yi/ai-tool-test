@@ -1,11 +1,13 @@
-use crate::models::config::{ConfigHistory, WorkModeConfig, AppState as ConfigAppState, UpdateWorkModeRequest};
-use crate::models::supplier::Supplier;
+use crate::models::config::{
+    AppState as ConfigAppState, ConfigHistory, UpdateWorkModeRequest, WorkModeConfig,
+};
 use crate::models::mcp_template::McpTemplate;
+use crate::models::supplier::Supplier;
 use crate::models::ApiResponse;
-use tauri::State;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use anyhow::Result;
+use std::sync::Arc;
+use tauri::State;
+use tokio::sync::Mutex;
 
 // 使用相同的应用状态
 use crate::commands::supplier::AppState;
@@ -173,7 +175,10 @@ pub async fn update_work_mode_config(
         mode_name: request.mode_name.clone(),
         active_claude_supplier_id: request.active_claude_supplier_id,
         active_codex_supplier_id: request.active_codex_supplier_id,
-        mcp_template_ids: request.mcp_template_ids.as_ref().map(|ids| serde_json::to_string(ids).unwrap_or_default()),
+        mcp_template_ids: request
+            .mcp_template_ids
+            .as_ref()
+            .map(|ids| serde_json::to_string(ids).unwrap_or_default()),
         created_at: None,
         updated_at: None,
     };
@@ -226,9 +231,7 @@ pub async fn set_app_state(
 }
 
 #[tauri::command]
-pub async fn get_current_mode(
-    state: State<'_, AppState>,
-) -> Result<ApiResponse<String>, String> {
+pub async fn get_current_mode(state: State<'_, AppState>) -> Result<ApiResponse<String>, String> {
     let pool = state.db_pool.lock().await;
 
     let current_mode = ConfigAppState::get_current_mode(&pool)
@@ -265,7 +268,9 @@ pub async fn get_database_stats(
         .await
         .map_err(|e| format!("获取数据库统计失败: {}", e))?;
 
-    Ok(ApiResponse::success(serde_json::to_value(&stats).unwrap_or_default()))
+    Ok(ApiResponse::success(
+        serde_json::to_value(&stats).unwrap_or_default(),
+    ))
 }
 
 #[tauri::command]

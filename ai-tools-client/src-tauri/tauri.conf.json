@@ -25,7 +25,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "deb",
+      "rpm"
+    ],
     "publisher": "AI Tools Team",
     "copyright": "Copyright © 2025",
     "category": "DeveloperTool",

@@ -1,9 +1,9 @@
 // 工作模式相关模型
 
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use sqlx::FromRow;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct WorkModeConfig {
@@ -74,27 +74,28 @@ pub struct WorkModeSwitchStep {
 impl WorkModeConfig {
     pub async fn get_all(pool: &sqlx::SqlitePool) -> Result<Vec<Self>> {
         let modes = sqlx::query_as::<_, WorkModeConfig>(
-            "SELECT * FROM work_mode_configs ORDER BY updated_at DESC"
+            "SELECT * FROM work_mode_configs ORDER BY updated_at DESC",
         )
         .fetch_all(pool)
         .await?;
-        
+
         Ok(modes)
     }
 
     pub async fn get_by_name(pool: &sqlx::SqlitePool, mode_name: &str) -> Result<Option<Self>> {
         let mode = sqlx::query_as::<_, WorkModeConfig>(
-            "SELECT * FROM work_mode_configs WHERE mode_name = ?"
+            "SELECT * FROM work_mode_configs WHERE mode_name = ?",
         )
         .bind(mode_name)
         .fetch_optional(pool)
         .await?;
-        
+
         Ok(mode)
     }
 
     pub async fn create(pool: &sqlx::SqlitePool, request: CreateWorkModeRequest) -> Result<Self> {
-        let mcp_template_ids_json = request.mcp_template_ids
+        let mcp_template_ids_json = request
+            .mcp_template_ids
             .map(|ids| serde_json::to_string(&ids).unwrap_or_default());
 
         let mode = sqlx::query_as::<_, WorkModeConfig>(
@@ -110,20 +111,29 @@ impl WorkModeConfig {
         .bind(mcp_template_ids_json)
         .fetch_one(pool)
         .await?;
-        
+
         Ok(mode)
     }
 
-    pub async fn update(pool: &sqlx::SqlitePool, request: UpdateWorkModeRequest) -> Result<Option<Self>> {
+    pub async fn update(
+        pool: &sqlx::SqlitePool,
+        request: UpdateWorkModeRequest,
+    ) -> Result<Option<Self>> {
         let existing = Self::get_by_id(pool, request.id).await?;
         if existing.is_none() {
             return Ok(None);
         }
 
-        let mode_name = request.mode_name.or_else(|| existing.clone().map(|m| m.mode_name));
-        let claude_id = request.active_claude_supplier_id.or_else(|| existing.clone().and_then(|m| m.active_claude_supplier_id));
-        let codex_id = request.active_codex_supplier_id.or_else(|| existing.clone().and_then(|m| m.active_codex_supplier_id));
-        
+        let mode_name = request
+            .mode_name
+            .or_else(|| existing.clone().map(|m| m.mode_name));
+        let claude_id = request
+            .active_claude_supplier_id
+            .or_else(|| existing.clone().and_then(|m| m.active_claude_supplier_id));
+        let codex_id = request
+            .active_codex_supplier_id
+            .or_else(|| existing.clone().and_then(|m| m.active_codex_supplier_id));
+
         let mcp_template_ids_json = if let Some(ids) = request.mcp_template_ids {
             Some(serde_json::to_string(&ids).unwrap_or_default())
         } else {
@@ -137,7 +147,7 @@ impl WorkModeConfig {
                 mcp_template_ids = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             RETURNING *
-            "#
+            "#,
         )
         .bind(&mode_name.unwrap())
         .bind(claude_id)
@@ -146,18 +156,17 @@ impl WorkModeConfig {
         .bind(request.id)
         .fetch_one(pool)
         .await?;
-        
+
         Ok(Some(updated))
     }
 
     pub async fn get_by_id(pool: &sqlx::SqlitePool, id: i64) -> Result<Option<Self>> {
-        let mode = sqlx::query_as::<_, WorkModeConfig>(
-            "SELECT * FROM work_mode_configs WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_optional(pool)
-        .await?;
-        
+        let mode =
+            sqlx::query_as::<_, WorkModeConfig>("SELECT * FROM work_mode_configs WHERE id = ?")
+                .bind(id)
+                .fetch_optional(pool)
+                .await?;
+
         Ok(mode)
     }
 
@@ -166,7 +175,7 @@ impl WorkModeConfig {
             .bind(id)
             .execute(pool)
             .await?;
-        
+
         Ok(result.rows_affected() > 0)
     }
 

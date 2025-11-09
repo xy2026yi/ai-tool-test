@@ -14,23 +14,56 @@ impl Database {
     pub async fn new(database_url: &str) -> Result<Self> {
         println!("正在初始化数据库，URL: {}", database_url);
 
-        // 尝试简单的数据库连接，不使用 WAL 模式
-        let pool = SqlitePool::connect(database_url).await
-            .map_err(|e| {
+        // 对于文件数据库，先检查路径和权限
+        if database_url.starts_with("sqlite:") && !database_url.contains(":memory:") {
+            let path = database_url.strip_prefix("sqlite:").unwrap_or(database_url);
+            println!("数据库文件路径: {}", path);
+
+            // 确保父目录存在
+            if let Some(parent) = std::path::Path::new(path).parent() {
+                println!("确保数据库目录存在: {:?}", parent);
+                std::fs::create_dir_all(parent)?;
+            }
+
+            // 首先尝试创建文件来测试权限
+            match std::fs::File::create(path) {
+                Ok(_) => {
+                    println!("数据库文件创建成功，删除空文件");
+                    let _ = std::fs::remove_file(path);
+                },
+                Err(e) => {
+                    println!("无法创建数据库文件: {}", e);
+                    return Err(anyhow::anyhow!("数据库文件权限不足: {}", e));
+                }
+            }
+        }
+
+        // 使用最简单的连接方式
+        let pool = match SqlitePool::connect(database_url).await {
+            Ok(pool) => {
+                println!("简单数据库连接成功");
+                pool
+            },
+            Err(e) => {
                 println!("简单连接失败: {:?}", e);
 
-                // 如果简单连接失败，尝试带选项的连接
-                println!("尝试带选项的连接...");
-                let connect_options = SqliteConnectOptions::from_str(database_url)?
-                    .create_if_missing(true)
-                    .busy_timeout(std::time::Duration::from_secs(10));
+                // 如果是文件数据库且简单连接失败，尝试带选项的连接
+                if database_url.starts_with("sqlite:") && !database_url.contains(":memory:") {
+                    println!("尝试带选项的连接...");
+                    let connect_options = SqliteConnectOptions::from_str(database_url)?
+                        .create_if_missing(true)
+                        .journal_mode(SqliteJournalMode::Delete)
+                        .busy_timeout(std::time::Duration::from_secs(10));
 
-                SqlitePool::connect_with(connect_options).await
-                    .map_err(|e2| {
-                        println!("带选项连接也失败: {:?}", e2);
-                        anyhow::anyhow!("数据库连接失败: 简单连接={}, 带选项连接={}", e, e2)
-                    })
-            })?;
+                    SqlitePool::connect_with(connect_options).await
+                        .map_err(|e2| {
+                            anyhow::anyhow!("数据库连接失败: 简单连接={}, 带选项连接={}", e, e2)
+                        })?
+                } else {
+                    return Err(anyhow::anyhow!("数据库连接失败: {}", e));
+                }
+            }
+        };
 
         println!("数据库连接成功，正在运行迁移...");
 

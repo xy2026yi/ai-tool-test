@@ -1,9 +1,12 @@
-use crate::models::mcp_template::{McpTemplate, CreateMcpTemplateRequest, UpdateMcpTemplateRequest, McpTemplateValidationResult, McpTemplateCategory};
+use crate::models::mcp_template::{
+    CreateMcpTemplateRequest, McpTemplate, McpTemplateCategory, McpTemplateValidationResult,
+    UpdateMcpTemplateRequest,
+};
 use crate::models::ApiResponse;
-use tauri::State;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use anyhow::Result;
+use std::sync::Arc;
+use tauri::State;
+use tokio::sync::Mutex;
 
 // 使用与供应商模块相同的应用状态
 use crate::commands::supplier::AppState;
@@ -27,21 +30,15 @@ pub async fn list_mcp_templates(
                 .await
                 .map_err(|e| format!("获取MCP模板失败: {}", e))?
         }
-        (Some(ai_type), None) => {
-            McpTemplate::get_by_ai_type(&pool, &ai_type)
-                .await
-                .map_err(|e| format!("获取MCP模板失败: {}", e))?
-        }
-        (None, Some(platform_type)) => {
-            McpTemplate::get_by_platform_type(&pool, &platform_type)
-                .await
-                .map_err(|e| format!("获取MCP模板失败: {}", e))?
-        }
-        (None, None) => {
-            McpTemplate::get_all(&pool)
-                .await
-                .map_err(|e| format!("获取MCP模板失败: {}", e))?
-        }
+        (Some(ai_type), None) => McpTemplate::get_by_ai_type(&pool, &ai_type)
+            .await
+            .map_err(|e| format!("获取MCP模板失败: {}", e))?,
+        (None, Some(platform_type)) => McpTemplate::get_by_platform_type(&pool, &platform_type)
+            .await
+            .map_err(|e| format!("获取MCP模板失败: {}", e))?,
+        (None, None) => McpTemplate::get_all(&pool)
+            .await
+            .map_err(|e| format!("获取MCP模板失败: {}", e))?,
     };
 
     Ok(ApiResponse::success(templates))
@@ -61,14 +58,20 @@ pub async fn create_mcp_template(
     let template = McpTemplate {
         id: None,
         name: request.name.clone(),
-        version: request.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+        version: request
+            .version
+            .clone()
+            .unwrap_or_else(|| "1.0.0".to_string()),
         ai_type: request.ai_type.clone(),
         platform_type: request.platform_type.clone(),
         config_content: request.config_content.clone(),
         description: request.description.clone(),
         is_builtin: Some(0),
         category: request.category.clone(),
-        tags: request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default()),
+        tags: request
+            .tags
+            .as_ref()
+            .map(|tags| serde_json::to_string(tags).unwrap_or_default()),
         usage_count: Some(0),
         created_at: None,
         updated_at: None,
@@ -76,7 +79,10 @@ pub async fn create_mcp_template(
 
     let validation_result = template.validate_config();
     if !validation_result.valid {
-        return Ok(ApiResponse::error(format!("模板验证失败: {}", validation_result.errors.join("; "))));
+        return Ok(ApiResponse::error(format!(
+            "模板验证失败: {}",
+            validation_result.errors.join("; ")
+        )));
     }
 
     let created_template = McpTemplate::create(&pool, request)
@@ -114,15 +120,33 @@ pub async fn update_mcp_template(
     // 构建更新后的模板进行验证
     let updated_template_for_validation = McpTemplate {
         id: Some(request.id),
-        name: request.name.clone().unwrap_or_else(|| existing_template.name.clone()),
-        version: request.version.clone().unwrap_or_else(|| existing_template.version.clone()),
+        name: request
+            .name
+            .clone()
+            .unwrap_or_else(|| existing_template.name.clone()),
+        version: request
+            .version
+            .clone()
+            .unwrap_or_else(|| existing_template.version.clone()),
         ai_type: existing_template.ai_type.clone(),
         platform_type: existing_template.platform_type.clone(),
-        config_content: request.config_content.clone().unwrap_or_else(|| existing_template.config_content.clone()),
-        description: request.description.clone().or_else(|| existing_template.description.clone()),
+        config_content: request
+            .config_content
+            .clone()
+            .unwrap_or_else(|| existing_template.config_content.clone()),
+        description: request
+            .description
+            .clone()
+            .or_else(|| existing_template.description.clone()),
         is_builtin: existing_template.is_builtin,
-        category: request.category.clone().or_else(|| existing_template.category.clone()),
-        tags: request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default())
+        category: request
+            .category
+            .clone()
+            .or_else(|| existing_template.category.clone()),
+        tags: request
+            .tags
+            .as_ref()
+            .map(|tags| serde_json::to_string(tags).unwrap_or_default())
             .or_else(|| existing_template.tags.clone()),
         usage_count: existing_template.usage_count,
         created_at: existing_template.created_at,
@@ -131,7 +155,10 @@ pub async fn update_mcp_template(
 
     let validation_result = updated_template_for_validation.validate_config();
     if !validation_result.valid {
-        return Ok(ApiResponse::error(format!("模板验证失败: {}", validation_result.errors.join("; "))));
+        return Ok(ApiResponse::error(format!(
+            "模板验证失败: {}",
+            validation_result.errors.join("; ")
+        )));
     }
 
     let updated_template = McpTemplate::update(&pool, request)
@@ -201,14 +228,20 @@ pub async fn validate_mcp_template(
     let template = McpTemplate {
         id: None,
         name: request.name.clone(),
-        version: request.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+        version: request
+            .version
+            .clone()
+            .unwrap_or_else(|| "1.0.0".to_string()),
         ai_type: request.ai_type.clone(),
         platform_type: request.platform_type.clone(),
         config_content: request.config_content.clone(),
         description: request.description.clone(),
         is_builtin: Some(0),
         category: request.category.clone(),
-        tags: request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default()),
+        tags: request
+            .tags
+            .as_ref()
+            .map(|tags| serde_json::to_string(tags).unwrap_or_default()),
         usage_count: Some(0),
         created_at: None,
         updated_at: None,
@@ -306,46 +339,58 @@ pub async fn get_mcp_template_stats(
         .unwrap_or(0);
 
     // 获取内置模板数
-    let builtin_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE is_builtin = 1")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取内置模板数失败: {}", e))?
-        .unwrap_or(0);
+    let builtin_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE is_builtin = 1",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取内置模板数失败: {}", e))?
+    .unwrap_or(0);
 
     // 获取自定义模板数
-    let custom_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE is_builtin = 0")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取自定义模板数失败: {}", e))?
-        .unwrap_or(0);
+    let custom_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE is_builtin = 0",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取自定义模板数失败: {}", e))?
+    .unwrap_or(0);
 
     // 获取Claude模板数
-    let claude_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE ai_type = 'claude'")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取Claude模板数失败: {}", e))?
-        .unwrap_or(0);
+    let claude_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE ai_type = 'claude'",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取Claude模板数失败: {}", e))?
+    .unwrap_or(0);
 
     // 获取Codex模板数
-    let codex_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE ai_type = 'codex'")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取Codex模板数失败: {}", e))?
-        .unwrap_or(0);
+    let codex_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE ai_type = 'codex'",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取Codex模板数失败: {}", e))?
+    .unwrap_or(0);
 
     // 获取Unix平台模板数
-    let unix_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE platform_type = 'unix'")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取Unix模板数失败: {}", e))?
-        .unwrap_or(0);
+    let unix_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE platform_type = 'unix'",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取Unix模板数失败: {}", e))?
+    .unwrap_or(0);
 
     // 获取Windows平台模板数
-    let windows_count = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM mcp_templates WHERE platform_type = 'windows'")
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| format!("获取Windows模板数失败: {}", e))?
-        .unwrap_or(0);
+    let windows_count = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT COUNT(*) FROM mcp_templates WHERE platform_type = 'windows'",
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| format!("获取Windows模板数失败: {}", e))?
+    .unwrap_or(0);
 
     let stats = serde_json::json!({
         "total": total_count,
@@ -377,14 +422,20 @@ pub async fn import_mcp_templates(
         let template = McpTemplate {
             id: None,
             name: request.name.clone(),
-            version: request.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+            version: request
+                .version
+                .clone()
+                .unwrap_or_else(|| "1.0.0".to_string()),
             ai_type: request.ai_type.clone(),
             platform_type: request.platform_type.clone(),
             config_content: request.config_content.clone(),
             description: request.description.clone(),
             is_builtin: Some(0),
             category: request.category.clone(),
-            tags: request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default()),
+            tags: request
+                .tags
+                .as_ref()
+                .map(|tags| serde_json::to_string(tags).unwrap_or_default()),
             usage_count: Some(0),
             created_at: None,
             updated_at: None,
@@ -392,7 +443,11 @@ pub async fn import_mcp_templates(
 
         let validation_result = template.validate_config();
         if !validation_result.valid {
-            errors.push(format!("模板 '{}' 验证失败: {}", template.name, validation_result.errors.join("; ")));
+            errors.push(format!(
+                "模板 '{}' 验证失败: {}",
+                template.name,
+                validation_result.errors.join("; ")
+            ));
             continue;
         }
 
@@ -403,7 +458,10 @@ pub async fn import_mcp_templates(
     }
 
     if !errors.is_empty() {
-        return Ok(ApiResponse::error(format!("导入过程中发生错误: {}", errors.join("; "))));
+        return Ok(ApiResponse::error(format!(
+            "导入过程中发生错误: {}",
+            errors.join("; ")
+        )));
     }
 
     Ok(ApiResponse::success(created_templates))

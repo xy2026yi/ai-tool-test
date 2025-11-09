@@ -70,6 +70,10 @@ __screenshots__/
 # Claude
 .claude
 
+# Codex
+.serena
+.spec-*
+
 # task
 .shrimp
 

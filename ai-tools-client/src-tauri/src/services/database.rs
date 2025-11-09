@@ -1,6 +1,8 @@
-use sqlx::{SqlitePool, Row};
 use anyhow::Result;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::SqlitePool;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub struct Database {
     pub pool: SqlitePool,
@@ -8,7 +10,14 @@ pub struct Database {
 
 impl Database {
     pub async fn new(database_url: &str) -> Result<Self> {
-        let pool = SqlitePool::connect(database_url).await?;
+        let connect_options = SqliteConnectOptions::from_str(database_url)?
+            .create_if_missing(true)
+            .foreign_keys(true);
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect_with(connect_options)
+            .await?;
 
         // 运行数据库迁移
         Self::run_migrations(&pool).await?;
@@ -211,5 +220,32 @@ impl Database {
             .unwrap_or(0);
 
         Ok(result == 1)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Database;
+    use std::fs;
+    use uuid::Uuid;
+
+    #[tokio::test]
+    async fn creates_sqlite_file_if_missing() {
+        let temp_root = std::env::temp_dir().join(format!("ai-tools-test-{}", Uuid::new_v4()));
+        fs::create_dir_all(&temp_root).unwrap();
+        let db_path = temp_root.join("test-db.sqlite");
+        let db_url = format!("sqlite://{}", db_path.to_string_lossy());
+
+        assert!(!db_path.exists());
+
+        {
+            let db = Database::new(&db_url).await.unwrap();
+            db.test_connection().await.unwrap();
+        }
+
+        assert!(db_path.exists());
+
+        let _ = fs::remove_file(&db_path);
+        let _ = fs::remove_dir_all(&temp_root);
     }
 }

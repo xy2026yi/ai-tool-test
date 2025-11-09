@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 
 // 健康状态枚举
@@ -46,11 +46,11 @@ pub struct Supplier {
     // 健康检查相关字段
     pub is_healthy: Option<i64>, // SQLite uses INTEGER for boolean
     pub last_check_time: Option<DateTime<Utc>>,
-    pub response_time: Option<i64>, // 毫秒
+    pub response_time: Option<i64>,        // 毫秒
     pub consecutive_failures: Option<i64>, // 连续失败次数
-    pub uptime_percentage: Option<f64>, // 运行时间百分比
-    pub total_requests: Option<i64>, // 总请求数
-    pub failed_requests: Option<i64>, // 失败请求数
+    pub uptime_percentage: Option<f64>,    // 运行时间百分比
+    pub total_requests: Option<i64>,       // 总请求数
+    pub failed_requests: Option<i64>,      // 失败请求数
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -194,11 +194,9 @@ impl Supplier {
 
     /// 获取所有供应商
     pub async fn get_all(pool: &SqlitePool) -> Result<Vec<Self>, sqlx::Error> {
-        sqlx::query_as::<_, Supplier>(
-            "SELECT * FROM suppliers ORDER BY sort_order ASC, name ASC"
-        )
-        .fetch_all(pool)
-        .await
+        sqlx::query_as::<_, Supplier>("SELECT * FROM suppliers ORDER BY sort_order ASC, name ASC")
+            .fetch_all(pool)
+            .await
     }
 
     /// 根据类型获取供应商
@@ -207,7 +205,7 @@ impl Supplier {
         supplier_type: &str,
     ) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as::<_, Supplier>(
-            "SELECT * FROM suppliers WHERE type = ? ORDER BY sort_order ASC, name ASC"
+            "SELECT * FROM suppliers WHERE type = ? ORDER BY sort_order ASC, name ASC",
         )
         .bind(supplier_type)
         .fetch_all(pool)
@@ -220,7 +218,7 @@ impl Supplier {
         supplier_type: &str,
     ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as::<_, Supplier>(
-            "SELECT * FROM suppliers WHERE type = ? AND is_active = 1 LIMIT 1"
+            "SELECT * FROM suppliers WHERE type = ? AND is_active = 1 LIMIT 1",
         )
         .bind(supplier_type)
         .fetch_optional(pool)
@@ -359,15 +357,16 @@ impl Supplier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::database::Database;
     use sqlx::SqlitePool;
     use tempfile::tempdir;
 
     async fn create_test_pool() -> SqlitePool {
         let temp_dir = tempdir().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let db_url = format!("sqlite:{}", db_path.display());
+        let db_url = format!("sqlite://{}", db_path.to_string_lossy());
 
-        crate::database::Database::new(&db_url).await.unwrap();
+        Database::new(&db_url).await.unwrap();
         SqlitePool::connect(&db_url).await.unwrap()
     }
 

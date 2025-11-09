@@ -1,12 +1,12 @@
 // 模型模块声明
-pub mod supplier;
-pub mod mcp_template;
 pub mod config;
+pub mod mcp_template;
 pub mod mode;
+pub mod supplier;
 
 // 通用类型定义
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiResponse<T> {

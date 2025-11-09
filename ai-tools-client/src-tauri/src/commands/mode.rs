@@ -1,9 +1,12 @@
-use crate::models::mode::{WorkModeConfig, CreateWorkModeRequest, UpdateWorkModeRequest, WorkModeSwitchRequest, WorkModeStatus, WorkModeSwitchResult};
-use crate::models::supplier::Supplier;
 use crate::models::mcp_template::McpTemplate;
+use crate::models::mode::{
+    CreateWorkModeRequest, UpdateWorkModeRequest, WorkModeConfig, WorkModeStatus,
+    WorkModeSwitchRequest, WorkModeSwitchResult,
+};
+use crate::models::supplier::Supplier;
 use crate::models::ApiResponse;
-use tauri::State;
 use anyhow::Result;
+use tauri::State;
 
 use crate::commands::supplier::AppState;
 
@@ -75,12 +78,20 @@ pub async fn switch_work_mode(
     // 步骤1: 验证供应商存在
     steps_completed.push("验证供应商配置".to_string());
     if let Some(claude_id) = request.claude_supplier_id {
-        if Supplier::get_by_id(&pool, claude_id).await.map_err(|e| format!("查询Claude供应商失败: {}", e))?.is_none() {
+        if Supplier::get_by_id(&pool, claude_id)
+            .await
+            .map_err(|e| format!("查询Claude供应商失败: {}", e))?
+            .is_none()
+        {
             return Ok(ApiResponse::error("指定的Claude供应商不存在".to_string()));
         }
     }
     if let Some(codex_id) = request.codex_supplier_id {
-        if Supplier::get_by_id(&pool, codex_id).await.map_err(|e| format!("查询Codex供应商失败: {}", e))?.is_none() {
+        if Supplier::get_by_id(&pool, codex_id)
+            .await
+            .map_err(|e| format!("查询Codex供应商失败: {}", e))?
+            .is_none()
+        {
             return Ok(ApiResponse::error("指定的Codex供应商不存在".to_string()));
         }
     }
@@ -89,8 +100,15 @@ pub async fn switch_work_mode(
     steps_completed.push("验证MCP模板配置".to_string());
     if let Some(template_ids) = &request.mcp_template_ids {
         for &template_id in template_ids {
-            if McpTemplate::get_by_id(&pool, template_id).await.map_err(|e| format!("查询MCP模板失败: {}", e))?.is_none() {
-                return Ok(ApiResponse::error(format!("MCP模板 {} 不存在", template_id)));
+            if McpTemplate::get_by_id(&pool, template_id)
+                .await
+                .map_err(|e| format!("查询MCP模板失败: {}", e))?
+                .is_none()
+            {
+                return Ok(ApiResponse::error(format!(
+                    "MCP模板 {} 不存在",
+                    template_id
+                )));
             }
         }
     }
@@ -142,7 +160,7 @@ pub async fn get_work_mode_status(
 
     // 获取当前工作模式（从app_state表）
     let current_mode = sqlx::query_scalar::<_, String>(
-        "SELECT value FROM app_state WHERE key = 'current_work_mode'"
+        "SELECT value FROM app_state WHERE key = 'current_work_mode'",
     )
     .fetch_optional(&pool)
     .await
@@ -180,9 +198,8 @@ pub async fn rollback_work_mode(
     _state: State<'_, AppState>,
     _backup_id: i64,
 ) -> Result<ApiResponse<bool>, String> {
-
     // 这里需要实现从备份恢复配置的逻辑
     // 暂时返回成功，实际需要调用配置恢复功能
-    
+
     Ok(ApiResponse::success(true))
 }

@@ -1,11 +1,14 @@
-use crate::models::supplier::{Supplier, CreateSupplierRequest, UpdateSupplierRequest, ConnectionTestResult, SupplierHealth, SupplierSwitchProgress, SupplierSwitchRequest, SupplierSwitchResult, FailoverConfig};
+use crate::models::supplier::{
+    ConnectionTestResult, CreateSupplierRequest, FailoverConfig, Supplier, SupplierHealth,
+    SupplierSwitchProgress, SupplierSwitchRequest, SupplierSwitchResult, UpdateSupplierRequest,
+};
 use crate::models::ApiResponse;
-use tauri::State;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use anyhow::Result;
 use chrono::Utc;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tauri::State;
+use tokio::sync::Mutex;
 
 // 应用状态
 pub struct AppState {
@@ -89,7 +92,11 @@ pub async fn update_supplier(
     let pool = state.db_pool.lock().await;
 
     // 检查供应商是否存在
-    if Supplier::get_by_id(&pool, request.id).await.map_err(|e| format!("查询供应商失败: {}", e))?.is_none() {
+    if Supplier::get_by_id(&pool, request.id)
+        .await
+        .map_err(|e| format!("查询供应商失败: {}", e))?
+        .is_none()
+    {
         return Ok(ApiResponse::error("供应商不存在".to_string()));
     }
 
@@ -141,7 +148,11 @@ pub async fn set_active_supplier(
     let pool = state.db_pool.lock().await;
 
     // 检查供应商是否存在
-    if Supplier::get_by_id(&pool, id).await.map_err(|e| format!("查询供应商失败: {}", e))?.is_none() {
+    if Supplier::get_by_id(&pool, id)
+        .await
+        .map_err(|e| format!("查询供应商失败: {}", e))?
+        .is_none()
+    {
         return Ok(ApiResponse::error("供应商不存在".to_string()));
     }
 
@@ -282,18 +293,19 @@ pub async fn import_suppliers(
         };
 
         match supplier.validate() {
-            Ok(()) => {
-                match Supplier::create(&pool, request).await {
-                    Ok(created) => created_suppliers.push(created),
-                    Err(e) => errors.push(format!("导入供应商 '{}' 失败: {}", supplier.name, e)),
-                }
-            }
+            Ok(()) => match Supplier::create(&pool, request).await {
+                Ok(created) => created_suppliers.push(created),
+                Err(e) => errors.push(format!("导入供应商 '{}' 失败: {}", supplier.name, e)),
+            },
             Err(e) => errors.push(format!("供应商 '{}' 验证失败: {}", supplier.name, e)),
         }
     }
 
     if !errors.is_empty() {
-        return Ok(ApiResponse::error(format!("导入过程中发生错误: {}", errors.join("; "))));
+        return Ok(ApiResponse::error(format!(
+            "导入过程中发生错误: {}",
+            errors.join("; ")
+        )));
     }
 
     Ok(ApiResponse::success(created_suppliers))
@@ -335,7 +347,9 @@ pub async fn check_supplier_health(
         let response_time = connection_result.response_time.unwrap_or(0);
 
         // 计算健康状态
-        let consecutive_failures = if is_healthy { 0 } else {
+        let consecutive_failures = if is_healthy {
+            0
+        } else {
             // 这里应该从数据库读取当前连续失败次数，然后+1
             1 // 简化实现
         };
@@ -428,7 +442,10 @@ pub async fn switch_supplier(
 
         let result = SupplierSwitchResult {
             success: true,
-            message: format!("成功从供应商 {} 切换到供应商 {}", request.from_supplier_id, request.to_supplier_id),
+            message: format!(
+                "成功从供应商 {} 切换到供应商 {}",
+                request.from_supplier_id, request.to_supplier_id
+            ),
             from_supplier_id: request.from_supplier_id,
             to_supplier_id: request.to_supplier_id,
             switch_time,
@@ -480,8 +497,8 @@ pub async fn auto_failover(
 
     if let Some(current_supplier) = current_active {
         // 检查当前供应商健康状态
-        let health_result = check_supplier_health(state.clone(), current_supplier.id.unwrap())
-            .await?;
+        let health_result =
+            check_supplier_health(state.clone(), current_supplier.id.unwrap()).await?;
 
         if let Some(health) = health_result.data {
             // 智能故障转移决策
@@ -500,7 +517,9 @@ pub async fn auto_failover(
                 for supplier in backup_suppliers {
                     if let Some(id) = supplier.id {
                         if id != current_supplier.id.unwrap() {
-                            if let Ok(backup_health_result) = check_supplier_health(state.clone(), id).await {
+                            if let Ok(backup_health_result) =
+                                check_supplier_health(state.clone(), id).await
+                            {
                                 if let Some(h) = backup_health_result.data {
                                     if h.is_healthy {
                                         // 计算备用供应商的综合评分
@@ -508,7 +527,9 @@ pub async fn auto_failover(
                                         candidates.push((supplier.clone(), h.clone(), score));
 
                                         // 更新最佳候选
-                                        if best_candidate.is_none() || score > best_candidate.as_ref().unwrap().2 {
+                                        if best_candidate.is_none()
+                                            || score > best_candidate.as_ref().unwrap().2
+                                        {
                                             best_candidate = Some((supplier, h, score));
                                         }
                                     }
@@ -520,7 +541,10 @@ pub async fn auto_failover(
 
                 // 如果找到最佳候选，执行切换
                 if let Some((best_supplier, best_health, score)) = best_candidate {
-                    println!("选择备用供应商: {} (评分: {:.2})", best_supplier.name, score);
+                    println!(
+                        "选择备用供应商: {} (评分: {:.2})",
+                        best_supplier.name, score
+                    );
 
                     let switch_request = SupplierSwitchRequest {
                         from_supplier_id: current_supplier.id.unwrap(),
@@ -535,7 +559,9 @@ pub async fn auto_failover(
                     return Ok(ApiResponse::error("没有健康的备用供应商可用".to_string()));
                 }
             } else {
-                return Ok(ApiResponse::error("当前供应商健康，无需故障转移".to_string()));
+                return Ok(ApiResponse::error(
+                    "当前供应商健康，无需故障转移".to_string(),
+                ));
             }
         } else {
             return Ok(ApiResponse::error("无法获取供应商健康状态".to_string()));
@@ -553,7 +579,9 @@ fn evaluate_failover_conditions(health: &SupplierHealth, config: &FailoverConfig
     }
 
     // 条件2: 响应时间超过阈值且成功率低
-    if health.response_time > config.max_response_time_ms as i64 && health.uptime_percentage < config.min_success_rate {
+    if health.response_time > config.max_response_time_ms as i64
+        && health.uptime_percentage < config.min_success_rate
+    {
         return true;
     }
 
@@ -583,7 +611,8 @@ fn calculate_supplier_score(health: &SupplierHealth, config: &FailoverConfig) ->
         let actual_score = if health.response_time as f64 <= optimal_time {
             30.0
         } else {
-            let penalty = ((health.response_time as f64 - optimal_time) / optimal_time).min(2.0) * 15.0;
+            let penalty =
+                ((health.response_time as f64 - optimal_time) / optimal_time).min(2.0) * 15.0;
             (30.0 - penalty).max(0.0)
         };
         actual_score
@@ -592,7 +621,8 @@ fn calculate_supplier_score(health: &SupplierHealth, config: &FailoverConfig) ->
     };
 
     // 连续失败惩罚 (20%) - 失败次数越少得分越高
-    let failure_penalty = (health.consecutive_failures as f64 / config.max_consecutive_failures as f64) * 20.0;
+    let failure_penalty =
+        (health.consecutive_failures as f64 / config.max_consecutive_failures as f64) * 20.0;
     let failure_score = 20.0 - failure_penalty.min(20.0);
 
     // 稳定性权重 (10%) - 基于总请求数和失败数的比例

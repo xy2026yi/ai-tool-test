@@ -19,7 +19,11 @@ impl Platform {
 
     /// 判断是否为Unix-like平台
     pub fn is_unix() -> bool {
-        cfg!(any(target_os = "macos", target_os = "linux", target_os = "freebsd"))
+        cfg!(any(
+            target_os = "macos",
+            target_os = "linux",
+            target_os = "freebsd"
+        ))
     }
 
     /// 获取用户主目录

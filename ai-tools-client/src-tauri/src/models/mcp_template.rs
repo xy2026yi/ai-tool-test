@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use std::collections::HashMap;
 
@@ -8,7 +8,7 @@ pub struct McpTemplate {
     pub id: Option<i64>,
     pub name: String,
     pub version: String,
-    pub ai_type: String, // "claude" or "codex"
+    pub ai_type: String,       // "claude" or "codex"
     pub platform_type: String, // "unix" or "windows"
     pub config_content: String,
     pub description: Option<String>,
@@ -65,7 +65,10 @@ impl McpTemplate {
     ) -> Result<Self, sqlx::Error> {
         let now = Utc::now();
         let version = request.version.unwrap_or_else(|| "1.0.0".to_string());
-        let tags_json = request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default());
+        let tags_json = request
+            .tags
+            .as_ref()
+            .map(|tags| serde_json::to_string(tags).unwrap_or_default());
 
         sqlx::query_as::<_, McpTemplate>(
             r#"
@@ -94,7 +97,7 @@ impl McpTemplate {
     /// 获取所有MCP模板
     pub async fn get_all(pool: &SqlitePool) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as::<_, McpTemplate>(
-            "SELECT * FROM mcp_templates ORDER BY is_builtin DESC, category ASC, name ASC"
+            "SELECT * FROM mcp_templates ORDER BY is_builtin DESC, category ASC, name ASC",
         )
         .fetch_all(pool)
         .await
@@ -155,7 +158,10 @@ impl McpTemplate {
         request: UpdateMcpTemplateRequest,
     ) -> Result<Option<Self>, sqlx::Error> {
         let now = Utc::now();
-        let tags_json = request.tags.as_ref().map(|tags| serde_json::to_string(tags).unwrap_or_default());
+        let tags_json = request
+            .tags
+            .as_ref()
+            .map(|tags| serde_json::to_string(tags).unwrap_or_default());
 
         let result = sqlx::query_as::<_, McpTemplate>(
             r#"
@@ -197,16 +203,19 @@ impl McpTemplate {
 
     /// 增加使用计数
     pub async fn increment_usage_count(pool: &SqlitePool, id: i64) -> Result<bool, sqlx::Error> {
-        let result = sqlx::query("UPDATE mcp_templates SET usage_count = usage_count + 1 WHERE id = ?")
-            .bind(id)
-            .execute(pool)
-            .await?;
+        let result =
+            sqlx::query("UPDATE mcp_templates SET usage_count = usage_count + 1 WHERE id = ?")
+                .bind(id)
+                .execute(pool)
+                .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
     /// 获取模板分类统计
-    pub async fn get_categories(pool: &SqlitePool) -> Result<Vec<McpTemplateCategory>, sqlx::Error> {
+    pub async fn get_categories(
+        pool: &SqlitePool,
+    ) -> Result<Vec<McpTemplateCategory>, sqlx::Error> {
         sqlx::query_as::<_, McpTemplateCategory>(
             r#"
             SELECT
@@ -243,12 +252,16 @@ impl McpTemplate {
         }
 
         if self.ai_type != "claude" && self.ai_type != "codex" {
-            result.errors.push("AI类型必须是 'claude' 或 'codex'".to_string());
+            result
+                .errors
+                .push("AI类型必须是 'claude' 或 'codex'".to_string());
             result.valid = false;
         }
 
         if self.platform_type != "unix" && self.platform_type != "windows" {
-            result.errors.push("平台类型必须是 'unix' 或 'windows'".to_string());
+            result
+                .errors
+                .push("平台类型必须是 'unix' 或 'windows'".to_string());
             result.valid = false;
         }
 
@@ -260,7 +273,9 @@ impl McpTemplate {
                     // JSON格式正确，可以进一步验证字段
                 }
                 Err(_) => {
-                    result.errors.push("Claude模板配置必须是有效的JSON格式".to_string());
+                    result
+                        .errors
+                        .push("Claude模板配置必须是有效的JSON格式".to_string());
                     result.valid = false;
                 }
             }
@@ -271,7 +286,9 @@ impl McpTemplate {
                     // TOML格式正确
                 }
                 Err(_) => {
-                    result.errors.push("Codex模板配置必须是有效的TOML格式".to_string());
+                    result
+                        .errors
+                        .push("Codex模板配置必须是有效的TOML格式".to_string());
                     result.valid = false;
                 }
             }
@@ -283,12 +300,10 @@ impl McpTemplate {
     /// 获取标签列表
     pub fn get_tags(&self) -> Vec<String> {
         match &self.tags {
-            Some(tags_json) => {
-                match serde_json::from_str::<Vec<String>>(tags_json) {
-                    Ok(tags) => tags,
-                    Err(_) => Vec::new(),
-                }
-            }
+            Some(tags_json) => match serde_json::from_str::<Vec<String>>(tags_json) {
+                Ok(tags) => tags,
+                Err(_) => Vec::new(),
+            },
             None => Vec::new(),
         }
     }
@@ -344,15 +359,16 @@ impl McpTemplate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::database::Database;
     use sqlx::SqlitePool;
     use tempfile::tempdir;
 
     async fn create_test_pool() -> SqlitePool {
         let temp_dir = tempdir().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let db_url = format!("sqlite:{}", db_path.display());
+        let db_url = format!("sqlite://{}", db_path.to_string_lossy());
 
-        crate::database::Database::new(&db_url).await.unwrap();
+        Database::new(&db_url).await.unwrap();
         SqlitePool::connect(&db_url).await.unwrap()
     }
 
@@ -365,7 +381,8 @@ mod tests {
             version: Some("1.0.0".to_string()),
             ai_type: "claude".to_string(),
             platform_type: "unix".to_string(),
-            config_content: r#"{"type": "stdio", "command": "npx", "args": ["-y", "example"]}"#.to_string(),
+            config_content: r#"{"type": "stdio", "command": "npx", "args": ["-y", "example"]}"#
+                .to_string(),
             description: Some("Test template".to_string()),
             category: Some("test".to_string()),
             tags: Some(vec!["test".to_string(), "example".to_string()]),

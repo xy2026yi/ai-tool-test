@@ -1,11 +1,11 @@
 // 命令模块声明
-pub mod supplier;
-pub mod mcp_template;
 pub mod config;
+pub mod mcp_template;
 pub mod mode;
+pub mod supplier;
 
 // 重新导出所有命令函数
-pub use supplier::*;
-pub use mcp_template::*;
 pub use config::*;
+pub use mcp_template::*;
 pub use mode::*;
+pub use supplier::*;

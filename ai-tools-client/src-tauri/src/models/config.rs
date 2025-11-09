@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -79,7 +79,7 @@ impl ConfigHistory {
             .bind(limit)
         } else {
             sqlx::query_as::<_, ConfigHistory>(
-                "SELECT * FROM config_history WHERE config_type = ? ORDER BY operation_time DESC"
+                "SELECT * FROM config_history WHERE config_type = ? ORDER BY operation_time DESC",
             )
             .bind(config_type)
         };
@@ -169,7 +169,10 @@ impl WorkModeConfig {
         request: UpdateWorkModeRequest,
     ) -> Result<Self, sqlx::Error> {
         let now = Utc::now();
-        let templates_json = request.mcp_template_ids.as_ref().map(|ids| serde_json::to_string(ids).unwrap_or_default());
+        let templates_json = request
+            .mcp_template_ids
+            .as_ref()
+            .map(|ids| serde_json::to_string(ids).unwrap_or_default());
 
         sqlx::query_as::<_, WorkModeConfig>(
             r#"
@@ -196,12 +199,10 @@ impl WorkModeConfig {
     /// 获取MCP模板ID列表
     pub fn get_mcp_template_ids(&self) -> Vec<i64> {
         match &self.mcp_template_ids {
-            Some(json) => {
-                match serde_json::from_str::<Vec<i64>>(json) {
-                    Ok(ids) => ids,
-                    Err(_) => Vec::new(),
-                }
-            }
+            Some(json) => match serde_json::from_str::<Vec<i64>>(json) {
+                Ok(ids) => ids,
+                Err(_) => Vec::new(),
+            },
             None => Vec::new(),
         }
     }
@@ -233,11 +234,7 @@ impl AppState {
     }
 
     /// 设置应用状态
-    pub async fn set(
-        pool: &SqlitePool,
-        key: &str,
-        value: &str,
-    ) -> Result<Self, sqlx::Error> {
+    pub async fn set(pool: &SqlitePool, key: &str, value: &str) -> Result<Self, sqlx::Error> {
         let now = Utc::now();
 
         sqlx::query_as::<_, AppState>(
@@ -308,15 +305,16 @@ impl AppState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::database::Database;
     use sqlx::SqlitePool;
     use tempfile::tempdir;
 
     async fn create_test_pool() -> SqlitePool {
         let temp_dir = tempdir().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        let db_url = format!("sqlite:{}", db_path.display());
+        let db_url = format!("sqlite://{}", db_path.to_string_lossy());
 
-        crate::database::Database::new(&db_url).await.unwrap();
+        Database::new(&db_url).await.unwrap();
         SqlitePool::connect(&db_url).await.unwrap()
     }
 
@@ -325,7 +323,9 @@ mod tests {
         let pool = create_test_pool().await;
 
         // 测试设置和获取应用状态
-        let state = AppState::set(&pool, "test_key", "test_value").await.unwrap();
+        let state = AppState::set(&pool, "test_key", "test_value")
+            .await
+            .unwrap();
         assert_eq!(state.key, "test_key");
         assert_eq!(state.value, "test_value");
 
@@ -337,7 +337,9 @@ mod tests {
         let mode = AppState::get_current_mode(&pool).await.unwrap();
         assert_eq!(mode, "claude_only");
 
-        AppState::set_current_mode(&pool, "codex_only").await.unwrap();
+        AppState::set_current_mode(&pool, "codex_only")
+            .await
+            .unwrap();
         let updated_mode = AppState::get_current_mode(&pool).await.unwrap();
         assert_eq!(updated_mode, "codex_only");
     }
@@ -383,7 +385,9 @@ mod tests {
         assert_eq!(history.config_type, "claude");
         assert_eq!(history.operation_type, "backup");
 
-        let retrieved = ConfigHistory::get_by_id(&pool, history.id.unwrap()).await.unwrap();
+        let retrieved = ConfigHistory::get_by_id(&pool, history.id.unwrap())
+            .await
+            .unwrap();
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().config_type, "claude");
     }
